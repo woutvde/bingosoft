@@ -77,7 +77,7 @@
         
         @media (max-width: 768px) {
             .options-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr !important;
             }
         }
         
@@ -122,15 +122,6 @@
             flex-shrink: 0;
         }
         .visual-flow .svg-display { height: 44px; }
-        .visual-flow .svg-arrow-1to1 { height: 20px; }
-        .visual-flow .svg-arrow-1toM { height: 34px; }
-        .visual-flow .multi-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            justify-content: center;
-        }
-        .visual-flow .multi-stack .svg-display { height: 20px; }
 
         /* Soft Divider inside the 3rd card */
         .soft-divider {
@@ -211,6 +202,10 @@
             grid-template-columns: 3fr 1fr;
             gap: 20px;
             text-align: left;
+        }
+        .layout-grid.one-column,
+        #operatorContainer.one-column .layout-grid {
+            grid-template-columns: 1fr;
         }
         .panel {
             background: #1e293b;
@@ -372,46 +367,44 @@
         <p style="color: #64748b;">Kies hoe je de bingo schermen wilt beheren en opstarten.</p>
         
         <div class="options-grid">
-            <!-- OPTIE 1 -->
-            <div class="opt-card" onclick="selectMode('1to1')">
+            <!-- OPTIE 1: Lokale Modus (Start direct 1:1 lokaal scherm) -->
+            <div class="opt-card" onclick="setupOneToOneSameSystem()">
                 <div class="visual-flow">
-                    <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
-                    </svg>
-                    <svg class="svg-arrow-1to1" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 6L8 2L10 2L16 8L10 14L8 14L8 10L-1.74845e-07 10L-3.01991e-07 6L8 6Z" fill="currentColor"/>
-                    </svg>
-                    <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
+                    <!-- Local SVG Icon -->
+                    <svg fill="currentColor" viewBox="0 0 435.301 435.301" style="height: 44px; width: auto;">
+                        <g>
+                            <g>
+                                <polygon points="90.271,26.872 90.271,97.088 120.271,97.088 120.271,56.872 405.301,56.872 405.301,232.198 364.941,232.198 364.941,262.198 435.301,262.198 435.301,26.872"/>
+                                <path d="M345.031,352.469l-0.09-235.326H0v235.326h135.996v21.829h-29.391v34.131h131.818v-34.131h-29.389v-21.829H345.031z M30,322.469V147.143h285.031v175.326H30z"/>
+                            </g>
+                        </g>
                     </svg>
                 </div>
-                <h3>Eén Scherm (1:1)</h3>
-                <p>Voor kleine opstellingen of bij gebruik van een tweede monitor/projector.</p>
+                <h3>Lokale Modus</h3>
+                <p>Start direct op en open de projectie in een nieuw venster op deze computer.</p>
             </div>
             
-            <!-- OPTIE 2 -->
-            <div class="opt-card" onclick="selectMode('1toM')">
+            <!-- OPTIE 2: Draadloze Modus (Start direct 1:M) -->
+            <div class="opt-card" onclick="setupOneToMany()">
                 <div class="visual-flow">
+                    <!-- Linker monitor -->
                     <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
                     </svg>
-                    <svg class="svg-arrow-1toM" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h4.597a5 5 0 0 1 3.904 1.877l.998 1.246A5 5 0 0 0 16.403 17H21m0 0-3-3m3 3-3 3m3-13h-5.078A4 4 0 0 0 12.8 8.501L11.201 10.5A4 4 0 0 1 8.078 12H6m15-5-3-3m3 3-3 3"/>
+                    <!-- Wireless SVG gedraaid 90 graden naar rechts -->
+                    <svg fill="currentColor" viewBox="0 0 256 256" style="transform: rotate(90deg); height: 24px; width: auto; margin: 0 5px;">
+                        <path d="M165.84619,163.1875a3.99976,3.99976,0,1,1-5.56348,5.74805,46.77825,46.77825,0,0,0-64.581,0,3.99976,3.99976,0,1,1-5.56348-5.74805,54.7759,54.7759,0,0,1,75.708,0Zm-37.854-63.18457A101.76273,101.76273,0,0,0,56.17334,129.269a4.00005,4.00005,0,1,0,5.61035,5.70313,94.75433,94.75433,0,0,1,132.417,0A4.00006,4.00006,0,0,0,199.811,129.269,101.76276,101.76276,0,0,0,127.99219,100.00293Zm105.74121-4.667a150.68135,150.68135,0,0,0-211.48242,0,4,4,0,1,0,5.626,5.6875,142.68158,142.68158,0,0,1,200.23047,0,4,4,0,1,0,5.626-5.6875ZM128,192a8,8,0,1,0,8,8A8.00917,8.00917,0,0,0,128,192Z"/>
                     </svg>
-                    <div class="multi-stack">
-                        <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
-                        </svg>
-                        <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
-                        </svg>
-                    </div>
+                    <!-- Rechter monitor -->
+                    <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
+                    </svg>
                 </div>
-                <h3>Veel Schermen (1:M)</h3>
-                <p>Koppel meerdere Raspberry Pi's of TV's tegelijkertijd in een grote zaal.</p>
+                <h3>Draadloze Modus</h3>
+                <p>Koppel meerdere externe apparaten (zoals TV's of Raspberry Pi's) draadloos via code koppelingen.</p>
             </div>
 
-            <!-- OPTIE 3 (NIEUW: Gebruik als Scherm) -->
+            <!-- OPTIE 3: Gebruik als Scherm -->
             <div class="opt-card" onclick="useAsDisplay()">
                 <div class="visual-flow">
                     <!-- Projector SVG -->
@@ -441,48 +434,11 @@
         <div id="errorMsg1" style="color: red; margin-top: 10px;"></div>
     </div>
 
-    <!-- STAGE 2: 1-to-1 CONFIG -->
-    <div id="wizardStep1to1" class="wizard-card" style="display: none;">
-        <h2>Eén-op-Eén Koppeling</h2>
-        <p style="color: #64748b; margin-bottom: 30px;">Gebruik je deze computer om de bingo-nummers op de TV te tonen?</p>
-        
-        <button class="btn btn-primary" onclick="setupOneToOneSameSystem()">
-            Ja, open projectie in een nieuw venster
-        </button>
-        <p style="font-size: 12px; color: #64748b; margin-bottom: 20px;">
-            (Handig voor split-screen of als je een tweede scherm op deze PC hebt aangesloten)
-        </p>
-        
-        <button class="btn btn-outline" onclick="showOneToOneSeparateSetup()">
-            Nee, de TV is een ander apparaat (bijv. Raspberry Pi)
-        </button>
-        <p style="font-size: 12px; color: #64748b; margin-bottom: 25px;">
-            (De TV toont een eigen unieke code die je zo invoert)
-        </p>
-        
-        <button class="btn btn-secondary" onclick="goBackToStart()">Terug naar start</button>
-    </div>
-
-    <!-- STAGE 3: 1-to-1 MANUAL SETUP -->
-    <div id="wizardStep1to1Manual" class="wizard-card" style="display: none;">
-        <h2>Koppel je TV</h2>
-        <p style="color: #64748b; text-align: left;">
-            1. Start de web-browser op de TV/Raspberry Pi op.<br>
-            2. Navigeer naar: <strong style="color: #38bdf8;">http://[server-ip]:8000/display</strong><br>
-            3. Voer de 4-letterige code die op de TV verschijnt hieronder in:
-        </p>
-        
-        <input type="text" id="manualDisplayCodeInput" class="join-input" maxlength="4" placeholder="TV CODE">
-        <button class="btn btn-primary" onclick="setupOneToOneSeparateSystem()">Verbind & Start Spel</button>
-        <button class="btn btn-secondary" onclick="goBackTo1to1Selection()">Terug</button>
-        <div id="errorMsgManual" style="color: red; margin-top: 10px;"></div>
-    </div>
-
-    <!-- STAGE 4: MAIN GAME CONSOLE -->
+    <!-- MAIN GAME CONSOLE -->
     <div id="operatorContainer">
         <div class="header-banner">
             <div style="font-size: 20px;">Spelcode: <strong id="currentGameCode" style="color: #38bdf8; letter-spacing: 1px;">-</strong></div>
-            <button onclick="disconnect()" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Verbinding Verbreken</button>
+            <button onclick="disconnect()" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Spel stopzetten</button>
         </div>
         
         <div class="layout-grid">
@@ -495,7 +451,7 @@
                 </div>
             </div>
             
-            <div class="panel">
+            <div class="panel" id="displayPanel">
                 <h3>Schermen Gekoppeld</h3>
                 <div id="manyToManyLinkBox">
                     <p style="font-size: 13px; color: #64748b;">Voer display-code in om extra scherm toe te voegen:</p>
@@ -513,8 +469,8 @@
         let activeToken = '';
         let pollInterval = null;
         let heartbeatInterval = null;
-        let setupMode = '';
         let currentDisplayTheme = 'dark';
+        let displayPopupWindow = null;
 
         // Initialize Console Theme from Storage
         const savedConsoleTheme = localStorage.getItem('operator_console_theme') || 'dark';
@@ -561,34 +517,9 @@
             }
         }
 
-        function selectMode(mode) {
-            setupMode = mode;
-            if (mode === '1to1') {
-                document.getElementById('wizardStep1').style.display = 'none';
-                document.getElementById('wizardStep1to1').style.display = 'block';
-            } else {
-                setupOneToMany();
-            }
-        }
-
         // Direct redirect for "Use as Display"
         function useAsDisplay() {
             window.location.href = '/display';
-        }
-
-        function goBackToStart() {
-            document.getElementById('wizardStep1to1').style.display = 'none';
-            document.getElementById('wizardStep1').style.display = 'block';
-        }
-
-        function showOneToOneSeparateSetup() {
-            document.getElementById('wizardStep1to1').style.display = 'none';
-            document.getElementById('wizardStep1to1Manual').style.display = 'block';
-        }
-
-        function goBackTo1to1Selection() {
-            document.getElementById('wizardStep1to1Manual').style.display = 'none';
-            document.getElementById('wizardStep1to1').style.display = 'block';
         }
 
         async function setupOneToOneSameSystem() {
@@ -597,45 +528,20 @@
                 const data = await res.json();
                 
                 const popupUrl = `/display/auto_link/${data.game_code}`;
-                window.open(popupUrl, 'BingoDisplay', 'width=1200,height=800,menubar=no,toolbar=no,location=no');
+                displayPopupWindow = window.open(popupUrl, 'BingoDisplay', 'width=1200,height=800,menubar=no,toolbar=no,location=no');
                 
                 setupConsole(data.game_code, data.token);
-                document.getElementById('wizardStep1to1').style.display = 'none';
+                document.getElementById('wizardStep1').style.display = 'none';
                 document.getElementById('manyToManyLinkBox').style.display = 'none';
+                document.getElementById('displayPanel').style.display = 'none';
+                const layoutGrid = document.querySelector('.layout-grid');
+                if (layoutGrid) {
+                    layoutGrid.style.gridTemplateColumns = '1fr';
+                    layoutGrid.classList.add('one-column');
+                }
+                document.getElementById('operatorContainer').classList.add('one-column');
             } catch (err) {
                 alert("Kon geen game instantie starten.");
-            }
-        }
-
-        async function setupOneToOneSeparateSystem() {
-            const displayCodeInput = document.getElementById('manualDisplayCodeInput');
-            const displayCode = displayCodeInput.value.trim().toUpperCase();
-            
-            if (displayCode.length !== 4) {
-                document.getElementById('errorMsgManual').innerText = "Voer de 4-letterige code van het display in.";
-                return;
-            }
-
-            try {
-                const res = await fetch('/api/create_game', { method: 'POST' });
-                const data = await res.json();
-                
-                const linkRes = await fetch(`/api/link_display/${data.game_code}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: data.token, display_code: displayCode })
-                });
-                
-                if (linkRes.ok) {
-                    setupConsole(data.game_code, data.token);
-                    document.getElementById('wizardStep1to1Manual').style.display = 'none';
-                    document.getElementById('manyToManyLinkBox').style.display = 'none';
-                } else {
-                    const errData = await linkRes.json();
-                    document.getElementById('errorMsgManual').innerText = errData.error || "Fout bij koppelen.";
-                }
-            } catch (err) {
-                document.getElementById('errorMsgManual').innerText = "Netwerkfout.";
             }
         }
 
@@ -647,6 +553,13 @@
                 setupConsole(data.game_code, data.token);
                 document.getElementById('wizardStep1').style.display = 'none';
                 document.getElementById('manyToManyLinkBox').style.display = 'block';
+                document.getElementById('displayPanel').style.display = 'block';
+                const layoutGrid = document.querySelector('.layout-grid');
+                if (layoutGrid) {
+                    layoutGrid.style.gridTemplateColumns = '3fr 1fr';
+                    layoutGrid.classList.remove('one-column');
+                }
+                document.getElementById('operatorContainer').classList.remove('one-column');
             } catch (err) {
                 alert("Fout bij aanmaken van multi-screen spel.");
             }
@@ -667,6 +580,12 @@
                     setupConsole(code, data.token);
                     document.getElementById('wizardStep1').style.display = 'none';
                     document.getElementById('manyToManyLinkBox').style.display = 'block';
+                    const layoutGrid = document.querySelector('.layout-grid');
+                    if (layoutGrid) {
+                        layoutGrid.style.gridTemplateColumns = '3fr 1fr';
+                        layoutGrid.classList.remove('one-column');
+                    }
+                    document.getElementById('operatorContainer').classList.remove('one-column');
                 } else {
                     document.getElementById('errorMsg1').innerText = data.error || "Fout bij hervatten.";
                 }
@@ -763,13 +682,20 @@
             
             document.getElementById('operatorContainer').style.display = 'none';
             document.getElementById('wizardStep1').style.display = 'block';
-            document.getElementById('wizardStep1to1').style.display = 'none';
-            document.getElementById('wizardStep1to1Manual').style.display = 'none';
             
             document.getElementById('gameCodeInput').value = '';
-            document.getElementById('manualDisplayCodeInput').value = '';
             document.getElementById('errorMsg1').innerText = '';
-            document.getElementById('errorMsgManual').innerText = '';
+            document.getElementById('displayPanel').style.display = 'block';
+            const layoutGrid = document.querySelector('.layout-grid');
+            if (layoutGrid) {
+                layoutGrid.style.gridTemplateColumns = '3fr 1fr';
+                layoutGrid.classList.remove('one-column');
+            }
+            document.getElementById('operatorContainer').classList.remove('one-column');
+            if (displayPopupWindow && !displayPopupWindow.closed) {
+                displayPopupWindow.close();
+                displayPopupWindow = null;
+            }
         }
 
         function renderGrid(calledNumbers) {
