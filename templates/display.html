@@ -36,7 +36,7 @@
 </head>
 <body>
     <div class="room-banner" id="banner">
-        Room Code: <span class="room-code" id="roomCodeDisplay">LOADING...</span>
+        Scherm Code: <span class="room-code" id="displayCodeDisplay">LOADING...</span>
     </div>
 
     <div class="prev-label">Vorige nummers:</div>
@@ -46,55 +46,38 @@
     <div class="new-num" id="newNum"></div>
 
     <script>
-        let roomCode = '';
-
-        async function initializeRoom() {
-            try {
-                const res = await fetch('/api/create_room', { method: 'POST' });
-                const data = await res.json();
-                roomCode = data.room_code;
-                document.getElementById('roomCodeDisplay').innerText = roomCode;
-                
-                setInterval(updateState, 1000);
-                updateState();
-            } catch (err) {
-                document.getElementById('roomCodeDisplay').innerText = "ERROR CREATING ROOM";
-                console.error("Room generation failed:", err);
-            }
-        }
+        // Set statically on Jinja compile
+        const displayCode = "{{ display_code }}";
 
         async function updateState() {
-            if (!roomCode) return;
+            if (!displayCode) return;
             try {
-                const res = await fetch(`/api/state/${roomCode}`);
-                if (res.status === 404) {
-                    document.getElementById('roomCodeDisplay').innerText = "SESSION EXPIRED";
-                    return;
-                }
+                const res = await fetch(`/api/state/${displayCode}`);
                 const data = await res.json();
+                
                 document.getElementById('newNum').innerText = data.last_number || '';
                 document.getElementById('prevNums').innerText = data.previous_numbers.join(', ');
                 
-                const codeSpan = document.getElementById('roomCodeDisplay');
+                const codeSpan = document.getElementById('displayCodeDisplay');
                 const banner = document.getElementById('banner');
                 
                 if (data.operator_connected) {
-                    // Hide code and secure banner styling
                     codeSpan.innerText = "VERBONDEN";
                     codeSpan.style.color = "#00ff00";
                     banner.style.backgroundColor = "#114a1c";
                 } else {
-                    // Reveal the code again
-                    codeSpan.innerText = roomCode;
+                    codeSpan.innerText = displayCode;
                     codeSpan.style.color = "#ffd700";
                     banner.style.backgroundColor = "#222";
                 }
             } catch (err) {
-                console.error("Could not fetch display updates:", err);
+                console.error("Error updating display state:", err);
             }
         }
 
-        initializeRoom();
+        document.getElementById('displayCodeDisplay').innerText = displayCode;
+        setInterval(updateState, 1000);
+        updateState();
     </script>
 </body>
 </html>

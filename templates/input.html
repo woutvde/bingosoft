@@ -5,28 +5,51 @@
     <title>Operatorscherm</title>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; text-align: center; margin: 0; padding: 20px; }
+        
+        /* Join Options */
         #joinContainer {
-            max-width: 400px;
-            margin: 100px auto;
+            max-width: 450px;
+            margin: 80px auto;
             background: white;
             padding: 40px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+        .box-section {
+            padding: 20px 0;
+        }
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #888;
+        }
         .join-input {
-            font-size: 28px;
+            font-size: 24px;
             padding: 10px;
-            width: 80%;
+            width: 70%;
             text-align: center;
             text-transform: uppercase;
-            margin-bottom: 20px;
-            letter-spacing: 4px;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
             border: 2px solid #ccc;
             border-radius: 4px;
         }
-        .join-btn {
+        .btn-primary {
             padding: 12px 30px;
             font-size: 18px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 80%;
+        }
+        .btn-primary:hover { background-color: #218838; }
+        .btn-secondary {
+            padding: 10px 20px;
+            font-size: 16px;
             background-color: #007bff;
             color: white;
             border: none;
@@ -34,116 +57,254 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .join-btn:hover { background-color: #0056b3; }
+        .btn-secondary:hover { background-color: #0056b3; }
         .error-msg { color: red; margin-top: 15px; font-weight: bold; }
 
-        #operatorContainer { display: none; }
+        /* Main Console Layout */
+        #operatorContainer { display: none; max-width: 1100px; margin: 0 auto; }
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 20px;
+            text-align: left;
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
         .grid { 
             display: grid; 
             grid-template-columns: repeat(10, 1fr); 
-            gap: 8px; 
-            max-width: 700px; 
-            margin: 20px auto;
+            gap: 6px; 
+            margin: 15px 0;
         }
-        .btn { 
-            padding: 15px; 
-            font-size: 18px; 
+        .grid .btn { 
+            padding: 12px 5px; 
+            font-size: 16px; 
             font-weight: bold; 
             cursor: pointer; 
             background-color: #e0e0e0;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-        .btn:hover { background-color: #d0d0d0; }
-        .called { 
+        .grid .btn:hover { background-color: #d0d0d0; }
+        .grid .called { 
             background-color: red !important; 
             color: white; 
             cursor: not-allowed; 
         }
-        .controls { margin-top: 20px; }
+        .controls { margin-top: 20px; text-align: center;}
         .ctrl-btn { 
-            padding: 15px 30px; 
-            font-size: 16px; 
-            margin: 0 10px; 
+            padding: 12px 25px; 
+            font-size: 15px; 
+            margin: 0 5px; 
             cursor: pointer; 
         }
-        .room-info {
-            font-size: 20px;
+        
+        /* Linked Screens UI */
+        .display-input {
+            width: 90%;
+            padding: 8px;
+            font-size: 16px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .display-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .display-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .unlink-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .unlink-btn:hover { background: #bd2130; }
+        .header-banner {
+            background: #222;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
     </style>
 </head>
 <body>
 
+    <!-- 1. ENTRY PORTAL -->
     <div id="joinContainer">
-        <h2>Koppel Operatorscherm</h2>
-        <input type="text" id="roomCodeInput" class="join-input" maxlength="4" placeholder="CODE">
-        <br>
-        <button class="join-btn" onclick="joinRoom()">Verbinden</button>
+        <h2>Bingo Operator Portaal</h2>
+        
+        <div class="box-section">
+            <button class="btn-primary" onclick="createNewGame()">Start Nieuw Spel</button>
+        </div>
+        
+        <div class="divider">OF</div>
+        
+        <div class="box-section">
+            <input type="text" id="gameCodeInput" class="join-input" maxlength="4" placeholder="GAME CODE">
+            <br>
+            <button class="btn-secondary" onclick="resumeGame()">Hervat Bestaand Spel</button>
+        </div>
+        
         <div id="errorMsg" class="error-msg"></div>
     </div>
 
+    <!-- 2. GAME CONSOLE -->
     <div id="operatorContainer">
-        <div class="room-info">Gekoppeld aan Room: <strong id="currentRoomCode" style="color: #007bff; letter-spacing: 1px;"></strong></div>
-        <div class="grid" id="bingoGrid"></div>
-        <div class="controls">
-            <button class="ctrl-btn" onclick="sendAction('undo')">Undo</button>
-            <button class="ctrl-btn" onclick="sendAction('reset')">Reset</button>
-            <button class="ctrl-btn" onclick="disconnect()" style="background-color: #dc3545; color: white; border: none; border-radius: 4px;">Disconnect</button>
+        <div class="header-banner">
+            <div style="font-size: 20px;">Actief Spel: <strong id="currentGameCode" style="color: #ffd700; letter-spacing: 1px;">-</strong></div>
+            <button onclick="disconnect()" style="background-color: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">Disconnect</button>
+        </div>
+        
+        <div class="layout-grid">
+            <!-- Left Panel: Bingo Board -->
+            <div class="panel">
+                <h3>Bingo Nummer Selectie</h3>
+                <div class="grid" id="bingoGrid"></div>
+                <div class="controls">
+                    <button class="ctrl-btn" onclick="sendAction('undo')">Undo Laatste</button>
+                    <button class="ctrl-btn" style="background-color: #ffc107;" onclick="sendAction('reset')">Reset Kaart</button>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Screen Link Management -->
+            <div class="panel">
+                <h3>Schermen Koppelen</h3>
+                <p style="font-size: 13px; color: #666;">Voer de code in die op de Raspberry Pi / TV te zien is.</p>
+                <input type="text" id="displayCodeInput" class="display-input" maxlength="4" placeholder="TV CODE">
+                <button class="btn-secondary" style="width: 100%;" onclick="linkDisplay()">Koppel Scherm</button>
+                
+                <h4 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Gekoppelde Schermen</h4>
+                <ul id="linkedDisplaysList" class="display-list">
+                    <!-- Dynamic list items -->
+                </ul>
+            </div>
         </div>
     </div>
 
     <script>
-        let activeRoomCode = '';
+        let activeGameCode = '';
         let activeToken = '';
         let pollInterval = null;
         let heartbeatInterval = null;
 
-        async function joinRoom() {
-            const inputVal = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-            if (inputVal.length !== 4) {
-                showError("Voer een 4-cijferige code in.");
+        async function createNewGame() {
+            try {
+                const res = await fetch('/api/create_game', { method: 'POST' });
+                const data = await res.json();
+                setupConsole(data.game_code, data.token);
+            } catch (err) {
+                showError("Kon geen nieuw spel opstarten.");
+            }
+        }
+
+        async function resumeGame() {
+            const code = document.getElementById('gameCodeInput').value.trim().toUpperCase();
+            if (code.length !== 4) {
+                showError("Voer een 4-letterige game code in.");
                 return;
             }
 
             try {
-                const res = await fetch(`/api/join_room/${inputVal}`, { method: 'POST' });
+                const res = await fetch(`/api/join_game/${code}`, { method: 'POST' });
                 const data = await res.json();
                 
                 if (res.ok) {
-                    activeRoomCode = inputVal;
-                    activeToken = data.token;
-                    
-                    document.getElementById('currentRoomCode').innerText = activeRoomCode;
-                    document.getElementById('joinContainer').style.display = 'none';
-                    document.getElementById('operatorContainer').style.display = 'block';
-                    
-                    updateState();
-                    pollInterval = setInterval(updateState, 2000);
-                    // Start transmitting keepalive pings
-                    heartbeatInterval = setInterval(sendHeartbeat, 2000);
+                    setupConsole(code, data.token);
                 } else {
-                    showError(data.error || "Fout bij verbinden.");
+                    showError(data.error || "Fout bij hervatten.");
                 }
             } catch (err) {
-                showError("Kan geen verbinding maken met de server.");
+                showError("Verbindingsfout.");
             }
         }
 
+        function setupConsole(gameCode, token) {
+            activeGameCode = gameCode;
+            activeToken = token;
+            
+            document.getElementById('currentGameCode').innerText = activeGameCode;
+            document.getElementById('joinContainer').style.display = 'none';
+            document.getElementById('operatorContainer').style.display = 'block';
+            
+            updateState();
+            pollInterval = setInterval(updateState, 2000);
+            heartbeatInterval = setInterval(sendHeartbeat, 2000);
+        }
+
         async function sendHeartbeat() {
-            if (!activeRoomCode || !activeToken) return;
+            if (!activeGameCode || !activeToken) return;
             try {
-                const res = await fetch(`/api/heartbeat/${activeRoomCode}`, {
+                const res = await fetch(`/api/heartbeat/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: activeToken })
                 });
                 if (res.status === 401) {
-                    alert("Sessie verlopen of overgenomen.");
+                    alert("Sessie verlopen.");
                     disconnect();
                 }
             } catch (e) {
-                console.warn("Server heartbeat lost, trying to reconnect...", e);
+                console.warn("Verbinding met server verloren...", e);
+            }
+        }
+
+        async function linkDisplay() {
+            const input = document.getElementById('displayCodeInput');
+            const displayCode = input.value.trim().toUpperCase();
+            if (displayCode.length !== 4) {
+                alert("Voer een 4-letterige code in.");
+                return;
+            }
+            try {
+                const res = await fetch(`/api/link_display/${activeGameCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: activeToken, display_code: displayCode })
+                });
+                if (res.ok) {
+                    input.value = '';
+                    updateState();
+                } else {
+                    const d = await res.json();
+                    alert(d.error || "Mislukt");
+                }
+            } catch (e) {
+                alert("Verbindingsfout.");
+            }
+        }
+
+        async function unlinkDisplay(displayCode) {
+            try {
+                await fetch(`/api/unlink_display/${activeGameCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: activeToken, display_code: displayCode })
+                });
+                updateState();
+            } catch (e) {
+                console.error(e);
             }
         }
 
@@ -155,20 +316,19 @@
             clearInterval(pollInterval);
             clearInterval(heartbeatInterval);
             
-            if (activeRoomCode && activeToken) {
-                // Instantly notify server to free the lock
-                await fetch(`/api/disconnect/${activeRoomCode}`, {
+            if (activeGameCode && activeToken) {
+                await fetch(`/api/disconnect/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: activeToken })
                 }).catch(() => {});
             }
 
-            activeRoomCode = '';
+            activeGameCode = '';
             activeToken = '';
             document.getElementById('joinContainer').style.display = 'block';
             document.getElementById('operatorContainer').style.display = 'none';
-            document.getElementById('roomCodeInput').value = '';
+            document.getElementById('gameCodeInput').value = '';
             showError('');
         }
 
@@ -190,40 +350,53 @@
             }
         }
 
+        function renderLinkedDisplays(displaysList) {
+            const container = document.getElementById('linkedDisplaysList');
+            container.innerHTML = '';
+            if (displaysList.length === 0) {
+                container.innerHTML = '<li style="color: #888; font-size:14px;">Geen schermen gekoppeld.</li>';
+                return;
+            }
+            displaysList.forEach(code => {
+                const li = document.createElement('li');
+                li.className = 'display-item';
+                li.innerHTML = `
+                    <span>Scherm: <strong>${code}</strong></span>
+                    <button class="unlink-btn" onclick="unlinkDisplay('${code}')">X</button>
+                `;
+                container.appendChild(li);
+            });
+        }
+
         async function sendAction(action, number = null) {
-            if (!activeRoomCode || !activeToken) return;
+            if (!activeGameCode || !activeToken) return;
             if (action === 'reset' && !confirm("Weet je zeker dat je het spel wilt resetten?")) return;
             if (action === 'call' && !confirm(`Weet je zeker dat je nummer ${number} wilt selecteren?`)) return;
 
             try {
-                const res = await fetch(`/api/action/${activeRoomCode}`, {
+                const res = await fetch(`/api/action/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action, number, token: activeToken })
                 });
-                
-                if (res.status === 401 || res.status === 404) {
-                    alert("Sessie verlopen!");
-                    disconnect();
-                    return;
-                }
-                updateState(); 
+                if (res.ok) updateState();
             } catch (err) {
                 console.error("Action failed", err);
             }
         }
 
         async function updateState() {
-            if (!activeRoomCode) return;
+            if (!activeGameCode) return;
             try {
-                const res = await fetch(`/api/state/${activeRoomCode}`);
+                const res = await fetch(`/api/operator_state/${activeGameCode}`);
                 if (res.status === 404) {
-                    alert("Sessie is verlopen op de server.");
+                    alert("Sessie verlopen.");
                     disconnect();
                     return;
                 }
                 const data = await res.json();
                 renderGrid(data.called_numbers);
+                renderLinkedDisplays(data.linked_displays);
             } catch (err) {
                 console.error("Error updating operator state", err);
             }
