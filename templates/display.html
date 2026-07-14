@@ -21,6 +21,7 @@
             left: 0;
             right: 0;
             font-weight: bold;
+            transition: background-color 0.5s ease;
         }
         .room-code {
             color: #ffd700;
@@ -34,7 +35,7 @@
     </style>
 </head>
 <body>
-    <div class="room-banner">
+    <div class="room-banner" id="banner">
         Room Code: <span class="room-code" id="roomCodeDisplay">LOADING...</span>
     </div>
 
@@ -54,7 +55,6 @@
                 roomCode = data.room_code;
                 document.getElementById('roomCodeDisplay').innerText = roomCode;
                 
-                // Begin polling the newly generated session
                 setInterval(updateState, 1000);
                 updateState();
             } catch (err) {
@@ -74,12 +74,26 @@
                 const data = await res.json();
                 document.getElementById('newNum').innerText = data.last_number || '';
                 document.getElementById('prevNums').innerText = data.previous_numbers.join(', ');
+                
+                const codeSpan = document.getElementById('roomCodeDisplay');
+                const banner = document.getElementById('banner');
+                
+                if (data.operator_connected) {
+                    // Hide code and secure banner styling
+                    codeSpan.innerText = "VERBONDEN";
+                    codeSpan.style.color = "#00ff00";
+                    banner.style.backgroundColor = "#114a1c";
+                } else {
+                    // Reveal the code again
+                    codeSpan.innerText = roomCode;
+                    codeSpan.style.color = "#ffd700";
+                    banner.style.backgroundColor = "#222";
+                }
             } catch (err) {
                 console.error("Could not fetch display updates:", err);
             }
         }
 
-        // Initialize on load
         initializeRoom();
     </script>
 </body>

@@ -5,8 +5,6 @@
     <title>Operatorscherm</title>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; text-align: center; margin: 0; padding: 20px; }
-        
-        /* Join Screen CSS */
         #joinContainer {
             max-width: 400px;
             margin: 100px auto;
@@ -39,7 +37,6 @@
         .join-btn:hover { background-color: #0056b3; }
         .error-msg { color: red; margin-top: 15px; font-weight: bold; }
 
-        /* Operator Grid (Hidden by default) */
         #operatorContainer { display: none; }
         .grid { 
             display: grid; 
@@ -78,7 +75,6 @@
 </head>
 <body>
 
-    <!-- Step 1: Entry Screen -->
     <div id="joinContainer">
         <h2>Koppel Operatorscherm</h2>
         <input type="text" id="roomCodeInput" class="join-input" maxlength="4" placeholder="CODE">
@@ -87,7 +83,6 @@
         <div id="errorMsg" class="error-msg"></div>
     </div>
 
-    <!-- Step 2: Game Board Controller -->
     <div id="operatorContainer">
         <div class="room-info">Gekoppeld aan Room: <strong id="currentRoomCode" style="color: #007bff; letter-spacing: 1px;"></strong></div>
         <div class="grid" id="bingoGrid"></div>
@@ -100,7 +95,9 @@
 
     <script>
         let activeRoomCode = '';
+        let activeToken = '';
         let pollInterval = null;
+        let heartbeatInterval = null;
 
         async function joinRoom() {
             const inputVal = document.getElementById('roomCodeInput').value.trim().toUpperCase();
@@ -110,23 +107,43 @@
             }
 
             try {
-                const res = await fetch(`/api/check_room/${inputVal}`);
+                const res = await fetch(`/api/join_room/${inputVal}`, { method: 'POST' });
                 const data = await res.json();
                 
-                if (data.exists) {
+                if (res.ok) {
                     activeRoomCode = inputVal;
+                    activeToken = data.token;
+                    
                     document.getElementById('currentRoomCode').innerText = activeRoomCode;
                     document.getElementById('joinContainer').style.display = 'none';
                     document.getElementById('operatorContainer').style.display = 'block';
                     
-                    // Populate board and start background syncing
                     updateState();
                     pollInterval = setInterval(updateState, 2000);
+                    // Start transmitting keepalive pings
+                    heartbeatInterval = setInterval(sendHeartbeat, 2000);
                 } else {
-                    showError("Deze room code is niet actief of bestaat niet.");
+                    showError(data.error || "Fout bij verbinden.");
                 }
             } catch (err) {
                 showError("Kan geen verbinding maken met de server.");
+            }
+        }
+
+        async function sendHeartbeat() {
+            if (!activeRoomCode || !activeToken) return;
+            try {
+                const res = await fetch(`/api/heartbeat/${activeRoomCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: activeToken })
+                });
+                if (res.status === 401) {
+                    alert("Sessie verlopen of overgenomen.");
+                    disconnect();
+                }
+            } catch (e) {
+                console.warn("Server heartbeat lost, trying to reconnect...", e);
             }
         }
 
@@ -134,9 +151,21 @@
             document.getElementById('errorMsg').innerText = msg;
         }
 
-        function disconnect() {
+        async function disconnect() {
             clearInterval(pollInterval);
+            clearInterval(heartbeatInterval);
+            
+            if (activeRoomCode && activeToken) {
+                // Instantly notify server to free the lock
+                await fetch(`/api/disconnect/${activeRoomCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: activeToken })
+                }).catch(() => {});
+            }
+
             activeRoomCode = '';
+            activeToken = '';
             document.getElementById('joinContainer').style.display = 'block';
             document.getElementById('operatorContainer').style.display = 'none';
             document.getElementById('roomCodeInput').value = '';
@@ -162,7 +191,7 @@
         }
 
         async function sendAction(action, number = null) {
-            if (!activeRoomCode) return;
+            if (!activeRoomCode || !activeToken) return;
             if (action === 'reset' && !confirm("Weet je zeker dat je het spel wilt resetten?")) return;
             if (action === 'call' && !confirm(`Weet je zeker dat je nummer ${number} wilt selecteren?`)) return;
 
@@ -170,10 +199,10 @@
                 const res = await fetch(`/api/action/${activeRoomCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action, number })
+                    body: JSON.stringify({ action, number, token: activeToken })
                 });
                 
-                if (res.status === 404) {
+                if (res.status === 401 || res.status === 404) {
                     alert("Sessie verlopen!");
                     disconnect();
                     return;
