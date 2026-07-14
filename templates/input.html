@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Operatorscherm</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; text-align: center; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 8px; 
+            max-width: 700px; 
+            margin: 30px auto;
+        }
+        .btn { 
+            padding: 15px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .btn:hover { background-color: #d0d0d0; }
+        .called { 
+            background-color: red !important; 
+            color: white; 
+            cursor: not-allowed; 
+        }
+        .controls { margin-top: 20px; }
+        .ctrl-btn { 
+            padding: 15px 30px; 
+            font-size: 16px; 
+            margin: 0 10px; 
+            cursor: pointer; 
+        }
+    </style>
+</head>
+<body>
+    <h1>Operatorscherm</h1>
+    <div class="grid" id="bingoGrid"></div>
+    <div class="controls">
+        <button class="ctrl-btn" onclick="sendAction('undo')">Undo</button>
+        <button class="ctrl-btn" onclick="sendAction('reset')">Reset</button>
+    </div>
+
+    <script>
+        function renderGrid(calledNumbers) {
+            const grid = document.getElementById('bingoGrid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= 90; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.innerText = i;
+                
+                if (calledNumbers.includes(i)) {
+                    btn.classList.add('called');
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => sendAction('call', i);
+                }
+                grid.appendChild(btn);
+            }
+        }
+
+        async function sendAction(action, number = null) {
+            if (action === 'reset' && !confirm("Are you sure you want to reset the game?")) return;
+            if (action === 'call' && !confirm(`Are you sure you want to select number ${number}?`)) return;
+
+            await fetch('/api/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, number })
+            });
+            updateState(); // Refresh local grid immediately
+        }
+
+        async function updateState() {
+            const res = await fetch('/api/state');
+            const data = await res.json();
+            renderGrid(data.called_numbers);
+        }
+
+        // Initialize and poll state (in case another operator makes a change)
+        updateState();
+        setInterval(updateState, 2000);
+    </script>
+</body>
+</html>

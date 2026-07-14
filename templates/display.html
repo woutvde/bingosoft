@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Projectiescherm</title>
+    <style>
+        body { 
+            background-color: #ffffff; 
+            text-align: center; 
+            font-family: Helvetica, Arial, sans-serif; 
+            margin: 0;
+            padding-top: 5vh;
+        }
+        .prev-label { font-size: 48px; color: #333; }
+        .prev-nums { font-size: 96px; min-height: 120px; color: #555; }
+        .new-label { font-size: 48px; margin-top: 50px; color: #333; }
+        .new-num { font-size: 384px; font-weight: bold; line-height: 1; margin-top: 10px; color: #000; }
+    </style>
+</head>
+<body>
+    <div class="prev-label">Vorige nummers:</div>
+    <div class="prev-nums" id="prevNums"></div>
+    
+    <div class="new-label">Nieuw nummer:</div>
+    <div class="new-num" id="newNum"></div>
+
+    <script>
+        async function updateState() {
+            try {
+                const res = await fetch('/api/state');
+                const data = await res.json();
+                
+                document.getElementById('newNum').innerText = data.last_number || '';
+                document.getElementById('prevNums').innerText = data.previous_numbers.join(', ');
+            } catch (err) {
+                console.error("Could not fetch bingo state", err);
+            }
+        }
+
+        // Poll the server every 1 second
+        setInterval(updateState, 1000);
+        updateState();
+    </script>
+</body>
+</html>
