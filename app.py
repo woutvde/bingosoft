@@ -1,11 +1,20 @@
+import random
+import string
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# In-memory state. (Requires running Gunicorn with exactly 1 worker)
-game_state = {
-    'called_numbers': []
-}
+# Global in-memory dictionary holding multiple games
+# Structure: { "CODE": { "called_numbers": [] } }
+games = {}
+
+def generate_room_code():
+    # Filtered characters to prevent human reading errors (No O, 0, I, 1)
+    chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    while True:
+        code = ''.join(random.choices(chars, k=4))
+        if code not in games:
+            return code
 
 @app.route('/')
 def index():
@@ -19,9 +28,27 @@ def input_page():
 def display_page():
     return render_template('display.html')
 
-@app.route('/api/state')
-def get_state():
-    called = game_state['called_numbers']
+@app.route('/api/create_room', methods=['POST'])
+def create_room():
+    code = generate_room_code()
+    games[code] = {
+        'called_numbers': []
+    }
+    return jsonify({'room_code': code})
+
+@app.route('/api/check_room/<room_code>')
+def check_room(room_code):
+    room_code = room_code.upper().strip()
+    exists = room_code in games
+    return jsonify({'exists': exists})
+
+@app.route('/api/state/<room_code>')
+def get_state(room_code):
+    room_code = room_code.upper().strip()
+    if room_code not in games:
+        return jsonify({'error': 'Room not found'}), 404
+        
+    called = games[room_code]['called_numbers']
     last = called[-1] if called else ""
     
     # Get up to 5 previous numbers (excluding the current 'last' one)
@@ -33,22 +60,27 @@ def get_state():
         'previous_numbers': previous
     })
 
-@app.route('/api/action', methods=['POST'])
-def action():
+@app.route('/api/action/<room_code>', methods=['POST'])
+def action(room_code):
+    room_code = room_code.upper().strip()
+    if room_code not in games:
+        return jsonify({'error': 'Room not found'}), 404
+        
     data = request.json
     action_type = data.get('action')
+    called_list = games[room_code]['called_numbers']
     
     if action_type == 'call':
         number = data.get('number')
-        if number not in game_state['called_numbers']:
-            game_state['called_numbers'].append(number)
+        if number not in called_list:
+            called_list.append(number)
     
     elif action_type == 'undo':
-        if game_state['called_numbers']:
-            game_state['called_numbers'].pop()
+        if called_list:
+            called_list.pop()
             
     elif action_type == 'reset':
-        game_state['called_numbers'] = []
+        games[room_code]['called_numbers'] = []
         
     return jsonify({'success': True})
 

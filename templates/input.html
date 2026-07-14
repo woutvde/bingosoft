@@ -4,13 +4,49 @@
     <meta charset="UTF-8">
     <title>Operatorscherm</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f4; text-align: center; }
+        body { font-family: sans-serif; background-color: #f4f4f4; text-align: center; margin: 0; padding: 20px; }
+        
+        /* Join Screen CSS */
+        #joinContainer {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .join-input {
+            font-size: 28px;
+            padding: 10px;
+            width: 80%;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            letter-spacing: 4px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+        }
+        .join-btn {
+            padding: 12px 30px;
+            font-size: 18px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .join-btn:hover { background-color: #0056b3; }
+        .error-msg { color: red; margin-top: 15px; font-weight: bold; }
+
+        /* Operator Grid (Hidden by default) */
+        #operatorContainer { display: none; }
         .grid { 
             display: grid; 
             grid-template-columns: repeat(10, 1fr); 
             gap: 8px; 
             max-width: 700px; 
-            margin: 30px auto;
+            margin: 20px auto;
         }
         .btn { 
             padding: 15px; 
@@ -34,17 +70,79 @@
             margin: 0 10px; 
             cursor: pointer; 
         }
+        .room-info {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>Operatorscherm</h1>
-    <div class="grid" id="bingoGrid"></div>
-    <div class="controls">
-        <button class="ctrl-btn" onclick="sendAction('undo')">Undo</button>
-        <button class="ctrl-btn" onclick="sendAction('reset')">Reset</button>
+
+    <!-- Step 1: Entry Screen -->
+    <div id="joinContainer">
+        <h2>Koppel Operatorscherm</h2>
+        <input type="text" id="roomCodeInput" class="join-input" maxlength="4" placeholder="CODE">
+        <br>
+        <button class="join-btn" onclick="joinRoom()">Verbinden</button>
+        <div id="errorMsg" class="error-msg"></div>
+    </div>
+
+    <!-- Step 2: Game Board Controller -->
+    <div id="operatorContainer">
+        <div class="room-info">Gekoppeld aan Room: <strong id="currentRoomCode" style="color: #007bff; letter-spacing: 1px;"></strong></div>
+        <div class="grid" id="bingoGrid"></div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="sendAction('undo')">Undo</button>
+            <button class="ctrl-btn" onclick="sendAction('reset')">Reset</button>
+            <button class="ctrl-btn" onclick="disconnect()" style="background-color: #dc3545; color: white; border: none; border-radius: 4px;">Disconnect</button>
+        </div>
     </div>
 
     <script>
+        let activeRoomCode = '';
+        let pollInterval = null;
+
+        async function joinRoom() {
+            const inputVal = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (inputVal.length !== 4) {
+                showError("Voer een 4-cijferige code in.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/check_room/${inputVal}`);
+                const data = await res.json();
+                
+                if (data.exists) {
+                    activeRoomCode = inputVal;
+                    document.getElementById('currentRoomCode').innerText = activeRoomCode;
+                    document.getElementById('joinContainer').style.display = 'none';
+                    document.getElementById('operatorContainer').style.display = 'block';
+                    
+                    // Populate board and start background syncing
+                    updateState();
+                    pollInterval = setInterval(updateState, 2000);
+                } else {
+                    showError("Deze room code is niet actief of bestaat niet.");
+                }
+            } catch (err) {
+                showError("Kan geen verbinding maken met de server.");
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('errorMsg').innerText = msg;
+        }
+
+        function disconnect() {
+            clearInterval(pollInterval);
+            activeRoomCode = '';
+            document.getElementById('joinContainer').style.display = 'block';
+            document.getElementById('operatorContainer').style.display = 'none';
+            document.getElementById('roomCodeInput').value = '';
+            showError('');
+        }
+
         function renderGrid(calledNumbers) {
             const grid = document.getElementById('bingoGrid');
             grid.innerHTML = '';
@@ -64,26 +162,43 @@
         }
 
         async function sendAction(action, number = null) {
-            if (action === 'reset' && !confirm("Are you sure you want to reset the game?")) return;
-            if (action === 'call' && !confirm(`Are you sure you want to select number ${number}?`)) return;
+            if (!activeRoomCode) return;
+            if (action === 'reset' && !confirm("Weet je zeker dat je het spel wilt resetten?")) return;
+            if (action === 'call' && !confirm(`Weet je zeker dat je nummer ${number} wilt selecteren?`)) return;
 
-            await fetch('/api/action', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, number })
-            });
-            updateState(); // Refresh local grid immediately
+            try {
+                const res = await fetch(`/api/action/${activeRoomCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, number })
+                });
+                
+                if (res.status === 404) {
+                    alert("Sessie verlopen!");
+                    disconnect();
+                    return;
+                }
+                updateState(); 
+            } catch (err) {
+                console.error("Action failed", err);
+            }
         }
 
         async function updateState() {
-            const res = await fetch('/api/state');
-            const data = await res.json();
-            renderGrid(data.called_numbers);
+            if (!activeRoomCode) return;
+            try {
+                const res = await fetch(`/api/state/${activeRoomCode}`);
+                if (res.status === 404) {
+                    alert("Sessie is verlopen op de server.");
+                    disconnect();
+                    return;
+                }
+                const data = await res.json();
+                renderGrid(data.called_numbers);
+            } catch (err) {
+                console.error("Error updating operator state", err);
+            }
         }
-
-        // Initialize and poll state (in case another operator makes a change)
-        updateState();
-        setInterval(updateState, 2000);
     </script>
 </body>
 </html>
