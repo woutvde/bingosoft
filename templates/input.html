@@ -2,63 +2,145 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Operatorscherm</title>
+    <title>Bingo Operatorscherm</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f4; text-align: center; margin: 0; padding: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; text-align: center; margin: 0; padding: 20px; color: #333; }
         
-        /* Join Options */
-        #joinContainer {
-            max-width: 450px;
-            margin: 80px auto;
+        /* Wizard Containers */
+        .wizard-card {
+            max-width: 600px;
+            margin: 60px auto;
             background: white;
             padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
         }
-        .box-section {
-            padding: 20px 0;
+        
+        /* Options Grid */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 35px;
         }
-        .divider {
-            border-top: 1px solid #eee;
-            margin: 15px 0;
-            font-weight: bold;
-            color: #888;
+        
+        .opt-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 30px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+        .opt-card:hover {
+            border-color: #007bff;
+            background-color: #f8f9ff;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,123,255,0.08);
+        }
+        .opt-card h3 { margin: 15px 0 8px 0; color: #222; font-size: 18px; }
+        .opt-card p { font-size: 13px; color: #6c757d; margin: 0; line-height: 1.4; }
+        
+        /* Custom Visual Flow Diagrams */
+        .visual-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            height: 60px;
+            margin-bottom: 10px;
+            color: #64748b; /* Neutral slate state */
+            transition: color 0.2s ease;
+            width: 100%;
+        }
+        .opt-card:hover .visual-flow {
+            color: #007bff; /* Turns beautiful active blue on hover */
+        }
+        .visual-flow svg {
+            height: 100%;
+            width: auto;
+            flex-shrink: 0;
+        }
+        
+        /* Size adjustments for customized display/arrow layout heights */
+        .visual-flow .svg-display {
+            height: 44px;
+        }
+        .visual-flow .svg-arrow-1to1 {
+            height: 20px;
+        }
+        .visual-flow .svg-arrow-1toM {
+            height: 34px;
+        }
+        .visual-flow .multi-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            justify-content: center;
+        }
+        .visual-flow .multi-stack .svg-display {
+            height: 20px;
+        }
+
+        /* Buttons & Inputs */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-primary:hover { background-color: #0056b3; }
+        .btn-secondary { background-color: #e2e8f0; color: #4a5568; }
+        .btn-secondary:hover { background-color: #cbd5e1; }
+        .btn-outline { background-color: transparent; border: 2px solid #007bff; color: #007bff; }
+        .btn-outline:hover { background-color: #007bff; color: white; }
+        
         .join-input {
             font-size: 24px;
-            padding: 10px;
-            width: 70%;
+            padding: 12px;
+            width: 100%;
             text-align: center;
             text-transform: uppercase;
-            margin-bottom: 15px;
-            letter-spacing: 2px;
-            border: 2px solid #ccc;
-            border-radius: 4px;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
         }
-        .btn-primary {
-            padding: 12px 30px;
-            font-size: 18px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 80%;
+        
+        .divider {
+            margin: 35px 0;
+            position: relative;
+            text-align: center;
         }
-        .btn-primary:hover { background-color: #218838; }
-        .btn-secondary {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
+        .divider::before {
+            content: "";
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 1px; background-color: #e2e8f0;
+            z-index: 1;
         }
-        .btn-secondary:hover { background-color: #0056b3; }
-        .error-msg { color: red; margin-top: 15px; font-weight: bold; }
+        .divider span {
+            background-color: white;
+            padding: 0 15px;
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+        }
 
         /* Main Console Layout */
         #operatorContainer { display: none; max-width: 1100px; margin: 0 auto; }
@@ -80,43 +162,34 @@
             gap: 6px; 
             margin: 15px 0;
         }
-        .grid .btn { 
+        .grid .num-btn { 
             padding: 12px 5px; 
             font-size: 16px; 
             font-weight: bold; 
             cursor: pointer; 
-            background-color: #e0e0e0;
-            border: 1px solid #ccc;
+            background-color: #e2e8f0;
+            border: 1px solid #cbd5e1;
             border-radius: 4px;
         }
-        .grid .btn:hover { background-color: #d0d0d0; }
+        .grid .num-btn:hover { background-color: #cbd5e1; }
         .grid .called { 
-            background-color: red !important; 
+            background-color: #ef4444 !important; 
             color: white; 
             cursor: not-allowed; 
         }
-        .controls { margin-top: 20px; text-align: center;}
-        .ctrl-btn { 
-            padding: 12px 25px; 
-            font-size: 15px; 
-            margin: 0 5px; 
-            cursor: pointer; 
-        }
+        .controls { margin-top: 20px; text-align: center; display: flex; gap: 10px; }
         
-        /* Linked Screens UI */
         .display-input {
-            width: 90%;
-            padding: 8px;
+            width: 100%;
+            padding: 10px;
             font-size: 16px;
             text-transform: uppercase;
             margin-bottom: 10px;
             box-sizing: border-box;
+            border: 2px solid #e2e8f0;
+            border-radius: 4px;
         }
-        .display-list {
-            list-style: none;
-            padding: 0;
-            margin: 15px 0;
-        }
+        .display-list { list-style: none; padding: 0; margin: 15px 0; }
         .display-item {
             display: flex;
             justify-content: space-between;
@@ -128,19 +201,14 @@
             border: 1px solid #ddd;
         }
         .unlink-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
+            background: #ef4444; color: white; border: none;
+            padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;
         }
-        .unlink-btn:hover { background: #bd2130; }
+        .unlink-btn:hover { background: #dc2626; }
         .header-banner {
-            background: #222;
+            background: #1e293b;
             color: white;
-            padding: 15px;
+            padding: 15px 20px;
             border-radius: 8px;
             margin-bottom: 20px;
             display: flex;
@@ -151,30 +219,106 @@
 </head>
 <body>
 
-    <!-- 1. ENTRY PORTAL -->
-    <div id="joinContainer">
-        <h2>Bingo Operator Portaal</h2>
+    <!-- STAGE 1: MODE SELECTOR -->
+    <div id="wizardStep1" class="wizard-card">
+        <h2>Bingo Operator Setup</h2>
+        <p style="color: #64748b;">Kies hoe je de bingo schermen wilt beheren en opstarten.</p>
         
-        <div class="box-section">
-            <button class="btn-primary" onclick="createNewGame()">Start Nieuw Spel</button>
+        <div class="options-grid">
+            <!-- 1 to 1 Card with Custom SVGs -->
+            <div class="opt-card" onclick="selectMode('1to1')">
+                <div class="visual-flow">
+                    <!-- Display 1 -->
+                    <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
+                    </svg>
+                    <!-- 1-to-1 Arrow -->
+                    <svg class="svg-arrow-1to1" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 6L8 2L10 2L16 8L10 14L8 14L8 10L-1.74845e-07 10L-3.01991e-07 6L8 6Z" fill="currentColor"/>
+                    </svg>
+                    <!-- Display 2 -->
+                    <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <h3>Eén Scherm (1:1)</h3>
+                <p>Voor kleine opstellingen of bij gebruik van een tweede monitor/projector.</p>
+            </div>
+            
+            <!-- 1 to Many Card with Custom SVGs -->
+            <div class="opt-card" onclick="selectMode('1toM')">
+                <div class="visual-flow">
+                    <!-- Source Display -->
+                    <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
+                    </svg>
+                    <!-- Split Arrow -->
+                    <svg class="svg-arrow-1toM" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h4.597a5 5 0 0 1 3.904 1.877l.998 1.246A5 5 0 0 0 16.403 17H21m0 0-3-3m3 3-3 3m3-13h-5.078A4 4 0 0 0 12.8 8.501L11.201 10.5A4 4 0 0 1 8.078 12H6m15-5-3-3m3 3-3 3"/>
+                    </svg>
+                    <!-- Stacked Targets -->
+                    <div class="multi-stack">
+                        <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
+                        </svg>
+                        <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                </div>
+                <h3>Veel Schermen (1:M)</h3>
+                <p>Koppel meerdere Raspberry Pi's of TV's tegelijkertijd in een grote zaal.</p>
+            </div>
         </div>
         
-        <div class="divider">OF</div>
-        
-        <div class="box-section">
-            <input type="text" id="gameCodeInput" class="join-input" maxlength="4" placeholder="GAME CODE">
-            <br>
-            <button class="btn-secondary" onclick="resumeGame()">Hervat Bestaand Spel</button>
-        </div>
-        
-        <div id="errorMsg" class="error-msg"></div>
+        <div class="divider"><span>OF SPEELSESSIE HERSTELLEN</span></div>
+        <input type="text" id="gameCodeInput" class="join-input" maxlength="4" placeholder="CODE">
+        <button class="btn btn-secondary" onclick="resumeGame()">Hervat Bestaand Spel</button>
+        <div id="errorMsg1" style="color: red; margin-top: 10px;"></div>
     </div>
 
-    <!-- 2. GAME CONSOLE -->
+    <!-- STAGE 2: 1-to-1 Same or Separate Machine? -->
+    <div id="wizardStep1to1" class="wizard-card" style="display: none;">
+        <h2>Eén-op-Eén Koppeling</h2>
+        <p style="color: #64748b; margin-bottom: 30px;">Gebruik je deze computer om de bingo-nummers op de TV te tonen?</p>
+        
+        <button class="btn btn-primary" onclick="setupOneToOneSameSystem()">
+            Ja, open projectie in een nieuw venster
+        </button>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 20px;">
+            (Handig voor split-screen of als je een tweede scherm op deze PC hebt aangesloten)
+        </p>
+        
+        <button class="btn btn-outline" onclick="showOneToOneSeparateSetup()">
+            Nee, de TV is een ander apparaat (bijv. Raspberry Pi)
+        </button>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 25px;">
+            (De TV toont een eigen unieke code die je zo invoert)
+        </p>
+        
+        <button class="btn btn-secondary" onclick="goBackToStart()">Terug naar start</button>
+    </div>
+
+    <!-- STAGE 3: 1-to-1 Manual Screen Linking Entry -->
+    <div id="wizardStep1to1Manual" class="wizard-card" style="display: none;">
+        <h2>Koppel je TV</h2>
+        <p style="color: #64748b; text-align: left;">
+            1. Start de web-browser op de TV/Raspberry Pi op.<br>
+            2. Navigeer naar: <strong style="color: #007bff;">http://[server-ip]:8000/display</strong><br>
+            3. Voer de 4-letterige code die op de TV verschijnt hieronder in:
+        </p>
+        
+        <input type="text" id="manualDisplayCodeInput" class="join-input" maxlength="4" placeholder="TV CODE">
+        <button class="btn btn-primary" onclick="setupOneToOneSeparateSystem()">Verbind & Start Spel</button>
+        <button class="btn btn-secondary" onclick="goBackTo1to1Selection()">Terug</button>
+        <div id="errorMsgManual" style="color: red; margin-top: 10px;"></div>
+    </div>
+
+    <!-- 4. ACTUAL GAME CONSOLE -->
     <div id="operatorContainer">
         <div class="header-banner">
-            <div style="font-size: 20px;">Actief Spel: <strong id="currentGameCode" style="color: #ffd700; letter-spacing: 1px;">-</strong></div>
-            <button onclick="disconnect()" style="background-color: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">Disconnect</button>
+            <div style="font-size: 20px;">Spelcode: <strong id="currentGameCode" style="color: #ffd700; letter-spacing: 1px;">-</strong></div>
+            <button onclick="disconnect()" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">Verbinding Verbreken</button>
         </div>
         
         <div class="layout-grid">
@@ -183,21 +327,22 @@
                 <h3>Bingo Nummer Selectie</h3>
                 <div class="grid" id="bingoGrid"></div>
                 <div class="controls">
-                    <button class="ctrl-btn" onclick="sendAction('undo')">Undo Laatste</button>
-                    <button class="ctrl-btn" style="background-color: #ffc107;" onclick="sendAction('reset')">Reset Kaart</button>
+                    <button class="btn btn-secondary" style="margin: 0;" onclick="sendAction('undo')">Laatste Herstellen</button>
+                    <button class="btn" style="background-color: #f59e0b; color: white; margin: 0;" onclick="sendAction('reset')">Reset Kaart</button>
                 </div>
             </div>
             
             <!-- Right Panel: Screen Link Management -->
             <div class="panel">
-                <h3>Schermen Koppelen</h3>
-                <p style="font-size: 13px; color: #666;">Voer de code in die op de Raspberry Pi / TV te zien is.</p>
-                <input type="text" id="displayCodeInput" class="display-input" maxlength="4" placeholder="TV CODE">
-                <button class="btn-secondary" style="width: 100%;" onclick="linkDisplay()">Koppel Scherm</button>
+                <h3>Schermen Gekoppeld</h3>
+                <div id="manyToManyLinkBox">
+                    <p style="font-size: 13px; color: #64748b;">Voer display-code in om extra scherm toe te voegen:</p>
+                    <input type="text" id="displayCodeInput" class="display-input" maxlength="4" placeholder="TV CODE">
+                    <button class="btn btn-primary" style="padding: 8px; font-size:14px;" onclick="linkDisplay()">Koppel Scherm</button>
+                </div>
                 
-                <h4 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Gekoppelde Schermen</h4>
                 <ul id="linkedDisplaysList" class="display-list">
-                    <!-- Dynamic list items -->
+                    <!-- Dynamic active displays -->
                 </ul>
             </div>
         </div>
@@ -208,21 +353,98 @@
         let activeToken = '';
         let pollInterval = null;
         let heartbeatInterval = null;
+        let setupMode = '';
 
-        async function createNewGame() {
+        function selectMode(mode) {
+            setupMode = mode;
+            if (mode === '1to1') {
+                document.getElementById('wizardStep1').style.display = 'none';
+                document.getElementById('wizardStep1to1').style.display = 'block';
+            } else {
+                setupOneToMany();
+            }
+        }
+
+        function goBackToStart() {
+            document.getElementById('wizardStep1to1').style.display = 'none';
+            document.getElementById('wizardStep1').style.display = 'block';
+        }
+
+        function showOneToOneSeparateSetup() {
+            document.getElementById('wizardStep1to1').style.display = 'none';
+            document.getElementById('wizardStep1to1Manual').style.display = 'block';
+        }
+
+        function goBackTo1to1Selection() {
+            document.getElementById('wizardStep1to1Manual').style.display = 'none';
+            document.getElementById('wizardStep1to1').style.display = 'block';
+        }
+
+        async function setupOneToOneSameSystem() {
             try {
                 const res = await fetch('/api/create_game', { method: 'POST' });
                 const data = await res.json();
+                
+                const popupUrl = `/display/auto_link/${data.game_code}`;
+                window.open(popupUrl, 'BingoDisplay', 'width=1200,height=800,menubar=no,toolbar=no,location=no');
+                
                 setupConsole(data.game_code, data.token);
+                document.getElementById('wizardStep1to1').style.display = 'none';
+                document.getElementById('manyToManyLinkBox').style.display = 'none';
             } catch (err) {
-                showError("Kon geen nieuw spel opstarten.");
+                alert("Kon geen game instantie starten.");
+            }
+        }
+
+        async function setupOneToOneSeparateSystem() {
+            const displayCodeInput = document.getElementById('manualDisplayCodeInput');
+            const displayCode = displayCodeInput.value.trim().toUpperCase();
+            
+            if (displayCode.length !== 4) {
+                document.getElementById('errorMsgManual').innerText = "Voer de 4-letterige code van het display in.";
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/create_game', { method: 'POST' });
+                const data = await res.json();
+                
+                const linkRes = await fetch(`/api/link_display/${data.game_code}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: data.token, display_code: displayCode })
+                });
+                
+                if (linkRes.ok) {
+                    setupConsole(data.game_code, data.token);
+                    document.getElementById('wizardStep1to1Manual').style.display = 'none';
+                    document.getElementById('manyToManyLinkBox').style.display = 'none';
+                } else {
+                    const errData = await linkRes.json();
+                    document.getElementById('errorMsgManual').innerText = errData.error || "Fout bij koppelen.";
+                }
+            } catch (err) {
+                document.getElementById('errorMsgManual').innerText = "Netwerkfout.";
+            }
+        }
+
+        async function setupOneToMany() {
+            try {
+                const res = await fetch('/api/create_game', { method: 'POST' });
+                const data = await res.json();
+                
+                setupConsole(data.game_code, data.token);
+                document.getElementById('wizardStep1').style.display = 'none';
+                document.getElementById('manyToManyLinkBox').style.display = 'block';
+            } catch (err) {
+                alert("Fout bij aanmaken van multi-screen spel.");
             }
         }
 
         async function resumeGame() {
             const code = document.getElementById('gameCodeInput').value.trim().toUpperCase();
             if (code.length !== 4) {
-                showError("Voer een 4-letterige game code in.");
+                document.getElementById('errorMsg1').innerText = "Voer een geldige code in.";
                 return;
             }
 
@@ -232,11 +454,13 @@
                 
                 if (res.ok) {
                     setupConsole(code, data.token);
+                    document.getElementById('wizardStep1').style.display = 'none';
+                    document.getElementById('manyToManyLinkBox').style.display = 'block';
                 } else {
-                    showError(data.error || "Fout bij hervatten.");
+                    document.getElementById('errorMsg1').innerText = data.error || "Fout bij hervatten.";
                 }
             } catch (err) {
-                showError("Verbindingsfout.");
+                document.getElementById('errorMsg1').innerText = "Netwerkfout.";
             }
         }
 
@@ -245,7 +469,6 @@
             activeToken = token;
             
             document.getElementById('currentGameCode').innerText = activeGameCode;
-            document.getElementById('joinContainer').style.display = 'none';
             document.getElementById('operatorContainer').style.display = 'block';
             
             updateState();
@@ -266,7 +489,7 @@
                     disconnect();
                 }
             } catch (e) {
-                console.warn("Verbinding met server verloren...", e);
+                console.warn("Verbinding tijdelijk verbroken...");
             }
         }
 
@@ -308,10 +531,6 @@
             }
         }
 
-        function showError(msg) {
-            document.getElementById('errorMsg').innerText = msg;
-        }
-
         async function disconnect() {
             clearInterval(pollInterval);
             clearInterval(heartbeatInterval);
@@ -326,10 +545,16 @@
 
             activeGameCode = '';
             activeToken = '';
-            document.getElementById('joinContainer').style.display = 'block';
+            
             document.getElementById('operatorContainer').style.display = 'none';
+            document.getElementById('wizardStep1').style.display = 'block';
+            document.getElementById('wizardStep1to1').style.display = 'none';
+            document.getElementById('wizardStep1to1Manual').style.display = 'none';
+            
             document.getElementById('gameCodeInput').value = '';
-            showError('');
+            document.getElementById('manualDisplayCodeInput').value = '';
+            document.getElementById('errorMsg1').innerText = '';
+            document.getElementById('errorMsgManual').innerText = '';
         }
 
         function renderGrid(calledNumbers) {
@@ -337,7 +562,7 @@
             grid.innerHTML = '';
             for (let i = 1; i <= 90; i++) {
                 const btn = document.createElement('button');
-                btn.className = 'btn';
+                btn.className = 'num-btn';
                 btn.innerText = i;
                 
                 if (calledNumbers.includes(i)) {
@@ -354,14 +579,14 @@
             const container = document.getElementById('linkedDisplaysList');
             container.innerHTML = '';
             if (displaysList.length === 0) {
-                container.innerHTML = '<li style="color: #888; font-size:14px;">Geen schermen gekoppeld.</li>';
+                container.innerHTML = '<li style="color: #94a3b8; font-size:14px; text-align: center; padding: 20px 0;">Geen actieve schermen gekoppeld.</li>';
                 return;
             }
             displaysList.forEach(code => {
                 const li = document.createElement('li');
                 li.className = 'display-item';
                 li.innerHTML = `
-                    <span>Scherm: <strong>${code}</strong></span>
+                    <span>TV Code: <strong>${code}</strong></span>
                     <button class="unlink-btn" onclick="unlinkDisplay('${code}')">X</button>
                 `;
                 container.appendChild(li);
@@ -370,8 +595,7 @@
 
         async function sendAction(action, number = null) {
             if (!activeGameCode || !activeToken) return;
-            if (action === 'reset' && !confirm("Weet je zeker dat je het spel wilt resetten?")) return;
-            if (action === 'call' && !confirm(`Weet je zeker dat je nummer ${number} wilt selecteren?`)) return;
+            if (action === 'reset' && !confirm("Weet je zeker dat je alle getrokken nummers wilt resetten?")) return;
 
             try {
                 const res = await fetch(`/api/action/${activeGameCode}`, {

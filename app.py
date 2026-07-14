@@ -7,9 +7,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 app = Flask(__name__)
 
 # Global in-memory databases
-# games: { "GAME_CODE": { "called_numbers": [], "operator_token": "...", "last_heartbeat": timestamp } }
 games = {}
-# displays: { "DISPLAY_CODE": { "linked_game_code": "..." or None } }
 displays = {}
 
 HEARTBEAT_TIMEOUT = 6  # Seconds before game lock releases
@@ -28,7 +26,7 @@ def is_game_active(game_code):
 
 @app.route('/')
 def index():
-    return "<h1>Bingo Server Running</h1><a href='/input'>Operatorscherm (Input)</a> | <a href='/display'>Projectiescherm (Display)</a>"
+    return redirect(url_for('input_page'))
 
 @app.route('/input')
 def input_page():
@@ -42,6 +40,22 @@ def display_landing():
         if code not in displays:
             break
     displays[code] = {'linked_game_code': None}
+    return redirect(url_for('display_page', display_code=code))
+
+# AUTO-LINK ENDPOINT: Generates and links a screen automatically, then redirects
+@app.route('/display/auto_link/<game_code>')
+def display_auto_link(game_code):
+    game_code = game_code.upper().strip()
+    if game_code not in games:
+        return "Fout: Dit spel bestaat niet of is verlopen.", 404
+        
+    while True:
+        code = generate_code()
+        if code not in displays:
+            break
+            
+    # Instantly associate this auto-generated display with the game
+    displays[code] = {'linked_game_code': game_code}
     return redirect(url_for('display_page', display_code=code))
 
 # The actual screen view
@@ -93,8 +107,6 @@ def get_operator_state(game_code):
         
     room = games[game_code]
     called = room['called_numbers']
-    
-    # Identify which displays are currently routed to this game
     linked = [code for code, data in displays.items() if data['linked_game_code'] == game_code]
     
     return jsonify({
@@ -118,7 +130,6 @@ def link_display(game_code):
     if not display_code:
         return jsonify({'error': 'Voer een geldige display code in.'}), 400
         
-    # Auto-register display if it doesn't exist yet
     if display_code not in displays:
         displays[display_code] = {'linked_game_code': None}
         
@@ -193,7 +204,6 @@ def get_display_state(display_code):
         
     linked_game = displays[display_code]['linked_game_code']
     
-    # If display is mapped to an ACTIVE game, return game state
     if linked_game and is_game_active(linked_game):
         room = games[linked_game]
         called = room['called_numbers']
@@ -206,7 +216,6 @@ def get_display_state(display_code):
             'operator_connected': True
         })
     else:
-        # Auto-unlink if game is dead, revert to showing local code
         displays[display_code]['linked_game_code'] = None
         return jsonify({
             'called_numbers': [],
@@ -225,7 +234,6 @@ def disconnect(game_code):
         if room['operator_token'] == token:
             room['operator_token'] = None
             room['last_heartbeat'] = 0
-            # Instantly unlock all displays hooked to this game
             for d_code, d_data in displays.items():
                 if d_data['linked_game_code'] == game_code:
                     d_data['linked_game_code'] = None
