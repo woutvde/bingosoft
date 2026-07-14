@@ -2,242 +2,277 @@ import random
 import string
 import time
 import uuid
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# Global in-memory databases
-games = {}
-displays = {}
+# In-memory database voor actieve games en schermen
+games = {}             # Sleutel: game_code (str) -> BingoGame object
+pending_displays = set() # Verzameling van actieve TV-codes die nog wachten op koppeling
+display_to_game = {}    # Sleutel: display_code (str) -> game_code (str)
 
-HEARTBEAT_TIMEOUT = 6  # Seconds before game lock releases
+def generate_code(length=4):
+    """Genereert een willekeurige unieke 4-letterige code (bijv. 'XQRT')."""
+    return ''.join(random.choices(string.ascii_uppercase, k=length))
 
-def generate_code():
-    chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    return ''.join(random.choices(chars, k=4))
 
-def is_game_active(game_code):
-    if game_code not in games:
-        return False
-    room = games[game_code]
-    if not room.get('operator_token'):
-        return False
-    return (time.time() - room.get('last_heartbeat', 0)) < HEARTBEAT_TIMEOUT
+class BingoGame:
+    def __init__(self, game_code, token):
+        self.game_code = game_code
+        self.token = token
+        self.called_numbers = []
+        self.linked_displays = []
+        self.display_theme = 'dark'  # Kan 'dark' of 'light' zijn
+        self.last_active = time.time()
+
+    def touch(self):
+        """Update de activiteitstijd voor de heartbeat."""
+        self.last_active = time.time()
+
+
+# =====================================================================
+# HTML ROUTES
+# =====================================================================
 
 @app.route('/')
-def index():
-    return redirect(url_for('input_page'))
-
-@app.route('/input')
-def input_page():
+@app.route('/operator')
+def operator_index():
+    """Laadt het operator dashboard."""
     return render_template('input.html')
 
-# Base display landing: generates a code for the physical screen and redirects
-@app.route('/display')
-def display_landing():
-    while True:
-        code = generate_code()
-        if code not in displays:
-            break
-    displays[code] = {'linked_game_code': None}
-    return redirect(url_for('display_page', display_code=code))
 
-# AUTO-LINK ENDPOINT: Generates and links a screen automatically, then redirects
+@app.route('/display')
+def display_index():
+    """Genereert een unieke TV-code en toont het wacht/koppelscherm."""
+    code = generate_code()
+    while code in pending_displays or code in display_to_game:
+        code = generate_code()
+    
+    pending_displays.add(code)
+    return render_template('display.html', display_code=code)
+
+
 @app.route('/display/auto_link/<game_code>')
 def display_auto_link(game_code):
-    game_code = game_code.upper().strip()
-    if game_code not in games:
-        return "Fout: Dit spel bestaat niet of is verlopen.", 404
-        
-    while True:
+    """
+    Voor 1-op-1 (zelfde computer): opent de TV in een nieuw venster
+    en koppelt deze direct op de achtergrond aan het spel.
+    """
+    game_code = game_code.upper()
+    code = generate_code()
+    while code in pending_displays or code in display_to_game:
         code = generate_code()
-        if code not in displays:
-            break
-            
-    # Instantly associate this auto-generated display with the game
-    displays[code] = {'linked_game_code': game_code}
-    return redirect(url_for('display_page', display_code=code))
-
-# The actual screen view
-@app.route('/display/<display_code>')
-def display_page(display_code):
-    display_code = display_code.upper().strip()
-    if display_code not in displays:
-        displays[display_code] = {'linked_game_code': None}
-    return render_template('display.html', display_code=display_code)
+    
+    if game_code in games:
+        game = games[game_code]
+        game.linked_displays.append(code)
+        display_to_game[code] = game_code
+        
+    return render_template('display.html', display_code=code)
 
 
-# --- OPERATOR API ENDPOINTS ---
+# =====================================================================
+# API ENDPOINTS
+# =====================================================================
 
 @app.route('/api/create_game', methods=['POST'])
 def create_game():
-    while True:
+    """Start een nieuw bingospel en geeft de game_code en een veiligheidstoken terug."""
+    game_code = generate_code()
+    while game_code in games:
         game_code = generate_code()
-        if game_code not in games:
-            break
-            
+        
     token = str(uuid.uuid4())
-    games[game_code] = {
-        'called_numbers': [],
-        'operator_token': token,
-        'last_heartbeat': time.time()
-    }
-    return jsonify({'game_code': game_code, 'token': token})
+    games[game_code] = BingoGame(game_code, token)
+    return jsonify({"game_code": game_code, "token": token})
+
 
 @app.route('/api/join_game/<game_code>', methods=['POST'])
 def join_game(game_code):
-    game_code = game_code.upper().strip()
+    """Laat een operator een bestaand spel hervatten via de spelcode."""
+    game_code = game_code.upper()
     if game_code not in games:
-        return jsonify({'error': 'Dit spel bestaat niet.'}), 404
-        
-    room = games[game_code]
-    if is_game_active(game_code):
-        return jsonify({'error': 'Dit spel wordt al beheerd door een actieve operator.'}), 403
-        
-    token = str(uuid.uuid4())
-    room['operator_token'] = token
-    room['last_heartbeat'] = time.time()
-    return jsonify({'token': token})
-
-@app.route('/api/operator_state/<game_code>')
-def get_operator_state(game_code):
-    game_code = game_code.upper().strip()
-    if game_code not in games:
-        return jsonify({'error': 'Game not found'}), 404
-        
-    room = games[game_code]
-    called = room['called_numbers']
-    linked = [code for code, data in displays.items() if data['linked_game_code'] == game_code]
+        return jsonify({"error": "Spelcode niet gevonden"}), 404
     
-    return jsonify({
-        'called_numbers': called,
-        'linked_displays': linked
-    })
+    game = games[game_code]
+    game.touch()
+    return jsonify({"token": game.token})
 
-@app.route('/api/link_display/<game_code>', methods=['POST'])
-def link_display(game_code):
-    game_code = game_code.upper().strip()
-    if not is_game_active(game_code):
-        return jsonify({'error': 'Geen actieve sessie.'}), 401
-        
-    data = request.json or {}
-    display_code = data.get('display_code', '').upper().strip()
-    token = data.get('token')
-    
-    if games[game_code]['operator_token'] != token:
-        return jsonify({'error': 'Unauthorized'}), 401
-        
-    if not display_code:
-        return jsonify({'error': 'Voer een geldige display code in.'}), 400
-        
-    if display_code not in displays:
-        displays[display_code] = {'linked_game_code': None}
-        
-    displays[display_code]['linked_game_code'] = game_code
-    return jsonify({'success': True})
-
-@app.route('/api/unlink_display/<game_code>', methods=['POST'])
-def unlink_display(game_code):
-    game_code = game_code.upper().strip()
-    data = request.json or {}
-    display_code = data.get('display_code', '').upper().strip()
-    token = data.get('token')
-    
-    if game_code in games and games[game_code]['operator_token'] == token:
-        if display_code in displays and displays[display_code]['linked_game_code'] == game_code:
-            displays[display_code]['linked_game_code'] = None
-            
-    return jsonify({'success': True})
-
-
-# --- SHARED & KEEP-ALIVE ENDPOINTS ---
 
 @app.route('/api/heartbeat/<game_code>', methods=['POST'])
 def heartbeat(game_code):
-    game_code = game_code.upper().strip()
+    """Controleert of de operator nog online is en houdt de sessie actief."""
+    game_code = game_code.upper()
     if game_code not in games:
-        return jsonify({'error': 'Game not found'}), 404
-    
-    data = request.json or {}
-    token = data.get('token')
-    room = games[game_code]
-    
-    if room['operator_token'] == token:
-        room['last_heartbeat'] = time.time()
-        return jsonify({'success': True})
-    return jsonify({'error': 'Sessie is verlopen.'}), 401
-
-@app.route('/api/action/<game_code>', methods=['POST'])
-def action(game_code):
-    game_code = game_code.upper().strip()
-    if not is_game_active(game_code):
-        return jsonify({'error': 'Sessie niet actief.'}), 401
+        return jsonify({"error": "Spel niet gevonden"}), 404
         
     data = request.json or {}
     token = data.get('token')
-    room = games[game_code]
+    game = games[game_code]
     
-    if room['operator_token'] != token:
-        return jsonify({'error': 'Unauthorized'}), 401
+    if game.token != token:
+        return jsonify({"error": "Niet geautoriseerd"}), 401
         
-    action_type = data.get('action')
-    called_list = room['called_numbers']
-    
-    if action_type == 'call':
-        number = data.get('number')
-        if number not in called_list:
-            called_list.append(number)
-    elif action_type == 'undo':
-        if called_list:
-            called_list.pop()
-    elif action_type == 'reset':
-        room['called_numbers'] = []
-        
-    room['last_heartbeat'] = time.time()
-    return jsonify({'success': True})
+    game.touch()
+    return jsonify({"status": "alive"})
 
-@app.route('/api/state/<display_code>')
-def get_display_state(display_code):
-    display_code = display_code.upper().strip()
-    if display_code not in displays:
-        displays[display_code] = {'linked_game_code': None}
+
+@app.route('/api/link_display/<game_code>', methods=['POST'])
+def link_display(game_code):
+    """Koppelt een fysiek TV-scherm (via de 4-lettercode) aan een spel."""
+    game_code = game_code.upper()
+    if game_code not in games:
+        return jsonify({"error": "Spel niet gevonden"}), 404
         
-    linked_game = displays[display_code]['linked_game_code']
+    data = request.json or {}
+    token = data.get('token')
+    display_code = data.get('display_code', '').upper()
     
-    if linked_game and is_game_active(linked_game):
-        room = games[linked_game]
-        called = room['called_numbers']
-        last = called[-1] if called else ""
-        previous = called[-6:-1] if len(called) > 1 else []
-        return jsonify({
-            'called_numbers': called,
-            'last_number': last,
-            'previous_numbers': previous,
-            'operator_connected': True
-        })
-    else:
-        displays[display_code]['linked_game_code'] = None
-        return jsonify({
-            'called_numbers': [],
-            'last_number': '',
-            'previous_numbers': [],
-            'operator_connected': False
-        })
+    game = games[game_code]
+    if game.token != token:
+        return jsonify({"error": "Niet geautoriseerd"}), 401
+        
+    if display_code not in pending_displays and display_code not in display_to_game:
+        return jsonify({"error": "Ongeldige of verlopen TV-code. Herstart het TV-scherm."}), 400
+        
+    # Ontkoppel eerst van eventueel vorig spel
+    if display_code in display_to_game:
+        old_game = display_to_game[display_code]
+        if old_game in games:
+            try:
+                games[old_game].linked_displays.remove(display_code)
+            except ValueError:
+                pass
+                
+    if display_code in pending_displays:
+        pending_displays.remove(display_code)
+        
+    display_to_game[display_code] = game_code
+    if display_code not in game.linked_displays:
+        game.linked_displays.append(display_code)
+        
+    game.touch()
+    return jsonify({"status": "linked"})
+
+
+@app.route('/api/unlink_display/<game_code>', methods=['POST'])
+def unlink_display(game_code):
+    """Ontkoppelt een TV-scherm zodat het weer terug naar het koppelscherm gaat."""
+    game_code = game_code.upper()
+    if game_code not in games:
+        return jsonify({"error": "Spel niet gevonden"}), 404
+        
+    data = request.json or {}
+    token = data.get('token')
+    display_code = data.get('display_code', '').upper()
+    
+    game = games[game_code]
+    if game.token != token:
+        return jsonify({"error": "Niet geautoriseerd"}), 401
+        
+    if display_code in game.linked_displays:
+        game.linked_displays.remove(display_code)
+    if display_code in display_to_game:
+        del display_to_game[display_code]
+        
+    pending_displays.add(display_code)
+    game.touch()
+    return jsonify({"status": "unlinked"})
+
 
 @app.route('/api/disconnect/<game_code>', methods=['POST'])
 def disconnect(game_code):
-    game_code = game_code.upper().strip()
+    """Beëindigt de sessie en stuurt alle gekoppelde TV's terug naar het startscherm."""
+    game_code = game_code.upper()
     if game_code in games:
         data = request.json or {}
         token = data.get('token')
-        room = games[game_code]
-        if room['operator_token'] == token:
-            room['operator_token'] = None
-            room['last_heartbeat'] = 0
-            for d_code, d_data in displays.items():
-                if d_data['linked_game_code'] == game_code:
-                    d_data['linked_game_code'] = None
-    return jsonify({'success': True})
+        game = games[game_code]
+        if game.token == token:
+            for d_code in list(game.linked_displays):
+                if d_code in display_to_game:
+                    del display_to_game[d_code]
+                pending_displays.add(d_code)
+            del games[game_code]
+    return jsonify({"status": "disconnected"})
+
+
+@app.route('/api/action/<game_code>', methods=['POST'])
+def game_action(game_code):
+    """Verwerkt acties van de operator (getal trekken, herstellen, reset, thema wijzigen)."""
+    game_code = game_code.upper()
+    if game_code not in games:
+        return jsonify({"error": "Spel niet gevonden"}), 404
+        
+    data = request.json or {}
+    token = data.get('token')
+    action = data.get('action')
+    number = data.get('number')
+    
+    game = games[game_code]
+    if game.token != token:
+        return jsonify({"error": "Niet geautoriseerd"}), 401
+        
+    game.touch()
+    
+    if action == 'call':
+        try:
+            num = int(number)
+            if 1 <= num <= 90 and num not in game.called_numbers:
+                game.called_numbers.append(num)
+        except (ValueError, TypeError):
+            pass
+    elif action == 'undo':
+        if game.called_numbers:
+            game.called_numbers.pop()
+    elif action == 'reset':
+        game.called_numbers = []
+    elif action == 'set_display_theme':
+        theme = data.get('theme', 'dark')
+        if theme in ['dark', 'light']:
+            game.display_theme = theme
+            return jsonify({"status": "success", "display_theme": game.display_theme})
+            
+    return jsonify({"status": "success"})
+
+
+@app.route('/api/operator_state/<game_code>')
+def operator_state(game_code):
+    """Geeft de actuele status van het spel door aan het operatorscherm."""
+    game_code = game_code.upper()
+    if game_code not in games:
+        return jsonify({"error": "Spel niet gevonden"}), 404
+        
+    game = games[game_code]
+    return jsonify({
+        "called_numbers": game.called_numbers,
+        "linked_displays": game.linked_displays,
+        "display_theme": game.display_theme
+    })
+
+
+@app.route('/api/state/<display_code>')
+def display_state(display_code):
+    """Laat de TV periodiek peilen naar het getrokken getal en het thema."""
+    display_code = display_code.upper()
+    game_code = display_to_game.get(display_code)
+    
+    if not game_code or game_code not in games:
+        return jsonify({
+            "operator_connected": False
+        })
+        
+    game = games[game_code]
+    last_num = game.called_numbers[-1] if game.called_numbers else None
+    
+    return jsonify({
+        "operator_connected": True,
+        "last_number": last_num,
+        "previous_numbers": game.called_numbers, # De frontend filtert zelf de laatste 5 eruit
+        "display_theme": game.display_theme
+    })
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Luistert op poort 8000 en is bereikbaar via het lokale netwerk (0.0.0.0)
+    app.run(host='0.0.0.0', port=8000, debug=True)

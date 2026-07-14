@@ -4,20 +4,70 @@
     <meta charset="UTF-8">
     <title>Bingo Operatorscherm</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; text-align: center; margin: 0; padding: 20px; color: #333; }
+        /* Base Slate Dark Theme Styles */
+        body { 
+            background-color: #0f172a; 
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            text-align: center; 
+            margin: 0; 
+            padding: 20px; 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
         
-        /* Wizard Containers */
+        /* Floating Persistent Theme Controller */
+        .theme-bar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: 1px solid #334155;
+            font-size: 13px;
+            font-weight: 600;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .theme-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .theme-toggle-btn {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 4px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+        .theme-toggle-btn:hover {
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+
+        /* Wizard Cards & Panels */
         .wizard-card {
             max-width: 600px;
-            margin: 60px auto;
-            background: white;
+            margin: 80px auto;
+            background: #1e293b;
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            border: 1px solid #334155;
             transition: all 0.3s ease;
         }
         
-        /* Options Grid */
         .options-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -26,26 +76,26 @@
         }
         
         .opt-card {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
+            border: 2px solid #334155;
+            border-radius: 12px;
             padding: 30px 15px;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
-            background: #fff;
+            background: #1e293b;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         .opt-card:hover {
-            border-color: #007bff;
-            background-color: #f8f9ff;
+            border-color: #38bdf8;
+            background-color: #1e293b;
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,123,255,0.08);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.15);
         }
-        .opt-card h3 { margin: 15px 0 8px 0; color: #222; font-size: 18px; }
-        .opt-card p { font-size: 13px; color: #6c757d; margin: 0; line-height: 1.4; }
+        .opt-card h3 { margin: 15px 0 8px 0; color: #f8fafc; font-size: 18px; }
+        .opt-card p { font-size: 13px; color: #94a3b8; margin: 0; line-height: 1.4; }
         
-        /* Custom Visual Flow Diagrams */
+        /* Custom Visual Flow Icons */
         .visual-flow {
             display: flex;
             align-items: center;
@@ -53,61 +103,53 @@
             gap: 12px;
             height: 60px;
             margin-bottom: 10px;
-            color: #64748b; /* Neutral slate state */
+            color: #475569; /* Slate gray base */
             transition: color 0.2s ease;
             width: 100%;
         }
         .opt-card:hover .visual-flow {
-            color: #007bff; /* Turns beautiful active blue on hover */
+            color: #38bdf8; /* Vibrant Cyan Active */
         }
         .visual-flow svg {
             height: 100%;
             width: auto;
             flex-shrink: 0;
         }
-        
-        /* Size adjustments for customized display/arrow layout heights */
-        .visual-flow .svg-display {
-            height: 44px;
-        }
-        .visual-flow .svg-arrow-1to1 {
-            height: 20px;
-        }
-        .visual-flow .svg-arrow-1toM {
-            height: 34px;
-        }
+        .visual-flow .svg-display { height: 44px; }
+        .visual-flow .svg-arrow-1to1 { height: 20px; }
+        .visual-flow .svg-arrow-1toM { height: 34px; }
         .visual-flow .multi-stack {
             display: flex;
             flex-direction: column;
             gap: 4px;
             justify-content: center;
         }
-        .visual-flow .multi-stack .svg-display {
-            height: 20px;
-        }
+        .visual-flow .multi-stack .svg-display { height: 20px; }
 
-        /* Buttons & Inputs */
+        /* Buttons & Controls */
         .btn {
             display: inline-block;
             padding: 12px 24px;
             font-size: 16px;
             font-weight: 600;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
             width: 100%;
             box-sizing: border-box;
             margin-bottom: 10px;
         }
-        .btn-primary { background-color: #007bff; color: white; }
-        .btn-primary:hover { background-color: #0056b3; }
-        .btn-secondary { background-color: #e2e8f0; color: #4a5568; }
-        .btn-secondary:hover { background-color: #cbd5e1; }
-        .btn-outline { background-color: transparent; border: 2px solid #007bff; color: #007bff; }
-        .btn-outline:hover { background-color: #007bff; color: white; }
+        .btn-primary { background-color: #0284c7; color: white; }
+        .btn-primary:hover { background-color: #0369a1; }
+        .btn-secondary { background-color: #334155; color: #cbd5e1; }
+        .btn-secondary:hover { background-color: #475569; }
+        .btn-outline { background-color: transparent; border: 2px solid #0284c7; color: #0284c7; }
+        .btn-outline:hover { background-color: #0284c7; color: white; }
         
         .join-input {
+            background: #0f172a;
+            color: #f8fafc;
             font-size: 24px;
             padding: 12px;
             width: 100%;
@@ -115,8 +157,8 @@
             text-transform: uppercase;
             margin-bottom: 20px;
             letter-spacing: 3px;
-            border: 2px solid #cbd5e1;
-            border-radius: 6px;
+            border: 2px solid #334155;
+            border-radius: 8px;
             box-sizing: border-box;
         }
         
@@ -129,21 +171,22 @@
             content: "";
             position: absolute;
             top: 50%; left: 0; right: 0;
-            height: 1px; background-color: #e2e8f0;
+            height: 1px; background-color: #334155;
             z-index: 1;
         }
         .divider span {
-            background-color: white;
+            background-color: #1e293b;
             padding: 0 15px;
-            color: #94a3b8;
+            color: #64748b;
             font-size: 14px;
             font-weight: 600;
             position: relative;
             z-index: 2;
+            transition: background-color 0.3s;
         }
 
-        /* Main Console Layout */
-        #operatorContainer { display: none; max-width: 1100px; margin: 0 auto; }
+        /* Main Console Panel Layout */
+        #operatorContainer { display: none; max-width: 1100px; margin: 60px auto 0 auto; }
         .layout-grid {
             display: grid;
             grid-template-columns: 3fr 1fr;
@@ -151,10 +194,11 @@
             text-align: left;
         }
         .panel {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: #1e293b;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
         .grid { 
             display: grid; 
@@ -167,15 +211,19 @@
             font-size: 16px; 
             font-weight: bold; 
             cursor: pointer; 
-            background-color: #e2e8f0;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #cbd5e1;
+            transition: all 0.2s;
         }
-        .grid .num-btn:hover { background-color: #cbd5e1; }
+        .grid .num-btn:hover { background-color: #334155; color: white; }
         .grid .called { 
             background-color: #ef4444 !important; 
-            color: white; 
+            color: white !important; 
+            border-color: #ef4444 !important;
             cursor: not-allowed; 
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
         }
         .controls { margin-top: 20px; text-align: center; display: flex; gap: 10px; }
         
@@ -186,38 +234,116 @@
             text-transform: uppercase;
             margin-bottom: 10px;
             box-sizing: border-box;
-            border: 2px solid #e2e8f0;
-            border-radius: 4px;
+            background: #0f172a;
+            color: #f8fafc;
+            border: 2px solid #334155;
+            border-radius: 6px;
         }
         .display-list { list-style: none; padding: 0; margin: 15px 0; }
         .display-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #f8f9fa;
+            background: #0f172a;
             padding: 8px 12px;
             margin-bottom: 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            color: #cbd5e1;
         }
         .unlink-btn {
             background: #ef4444; color: white; border: none;
-            padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;
+            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;
         }
-        .unlink-btn:hover { background: #dc2626; }
         .header-banner {
             background: #1e293b;
+            border: 1px solid #334155;
             color: white;
             padding: 15px 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+
+        /* ================= LIGHT MODE OVERRIDES ================= */
+        body.light-theme {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        body.light-theme .theme-bar {
+            background: rgba(255, 255, 255, 0.85);
+            border-color: #cbd5e1;
+            color: #334155;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        body.light-theme .theme-toggle-btn {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .theme-toggle-btn:hover {
+            border-color: #0284c7;
+            color: #0284c7;
+        }
+        body.light-theme .wizard-card, body.light-theme .panel, body.light-theme .header-banner {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #0f172a;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        body.light-theme .opt-card {
+            border-color: #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        body.light-theme .opt-card:hover {
+            border-color: #0284c7;
+            background-color: #f0f9ff;
+            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.1);
+        }
+        body.light-theme .opt-card h3 { color: #0f172a; }
+        body.light-theme .opt-card p { color: #64748b; }
+        body.light-theme .visual-flow { color: #94a3b8; }
+        body.light-theme .opt-card:hover .visual-flow { color: #0284c7; }
+        
+        body.light-theme .btn-secondary { background-color: #e2e8f0; color: #334155; }
+        body.light-theme .btn-secondary:hover { background-color: #cbd5e1; }
+        body.light-theme .join-input, body.light-theme .display-input {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        body.light-theme .divider::before { background-color: #e2e8f0; }
+        body.light-theme .divider span { background-color: #ffffff; color: #94a3b8; }
+        
+        body.light-theme .grid .num-btn {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .grid .num-btn:hover { background-color: #e2e8f0; color: #0f172a; }
+        body.light-theme .display-item {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
     </style>
 </head>
 <body>
+
+    <!-- TOP CONTROL FLOATING BAR -->
+    <div class="theme-bar">
+        <div class="theme-control">
+            <span>Console:</span>
+            <button onclick="toggleConsoleTheme()" id="consoleThemeBtn" class="theme-toggle-btn">Donker</button>
+        </div>
+        <div class="theme-control" id="tvThemeControl" style="display: none;">
+            <span>TV Scherm:</span>
+            <button onclick="toggleDisplayTheme()" id="displayThemeBtn" class="theme-toggle-btn">Donker</button>
+        </div>
+    </div>
 
     <!-- STAGE 1: MODE SELECTOR -->
     <div id="wizardStep1" class="wizard-card">
@@ -225,18 +351,14 @@
         <p style="color: #64748b;">Kies hoe je de bingo schermen wilt beheren en opstarten.</p>
         
         <div class="options-grid">
-            <!-- 1 to 1 Card with Custom SVGs -->
             <div class="opt-card" onclick="selectMode('1to1')">
                 <div class="visual-flow">
-                    <!-- Display 1 -->
                     <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
                     </svg>
-                    <!-- 1-to-1 Arrow -->
                     <svg class="svg-arrow-1to1" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M8 6L8 2L10 2L16 8L10 14L8 14L8 10L-1.74845e-07 10L-3.01991e-07 6L8 6Z" fill="currentColor"/>
                     </svg>
-                    <!-- Display 2 -->
                     <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
                     </svg>
@@ -245,18 +367,14 @@
                 <p>Voor kleine opstellingen of bij gebruik van een tweede monitor/projector.</p>
             </div>
             
-            <!-- 1 to Many Card with Custom SVGs -->
             <div class="opt-card" onclick="selectMode('1toM')">
                 <div class="visual-flow">
-                    <!-- Source Display -->
                     <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
                     </svg>
-                    <!-- Split Arrow -->
                     <svg class="svg-arrow-1toM" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h4.597a5 5 0 0 1 3.904 1.877l.998 1.246A5 5 0 0 0 16.403 17H21m0 0-3-3m3 3-3 3m3-13h-5.078A4 4 0 0 0 12.8 8.501L11.201 10.5A4 4 0 0 1 8.078 12H6m15-5-3-3m3 3-3 3"/>
                     </svg>
-                    <!-- Stacked Targets -->
                     <div class="multi-stack">
                         <svg class="svg-display" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                             <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
@@ -277,7 +395,7 @@
         <div id="errorMsg1" style="color: red; margin-top: 10px;"></div>
     </div>
 
-    <!-- STAGE 2: 1-to-1 Same or Separate Machine? -->
+    <!-- STAGE 2: 1-to-1 CONFIG -->
     <div id="wizardStep1to1" class="wizard-card" style="display: none;">
         <h2>Eén-op-Eén Koppeling</h2>
         <p style="color: #64748b; margin-bottom: 30px;">Gebruik je deze computer om de bingo-nummers op de TV te tonen?</p>
@@ -285,26 +403,26 @@
         <button class="btn btn-primary" onclick="setupOneToOneSameSystem()">
             Ja, open projectie in een nieuw venster
         </button>
-        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 20px;">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 20px;">
             (Handig voor split-screen of als je een tweede scherm op deze PC hebt aangesloten)
         </p>
         
         <button class="btn btn-outline" onclick="showOneToOneSeparateSetup()">
             Nee, de TV is een ander apparaat (bijv. Raspberry Pi)
         </button>
-        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 25px;">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 25px;">
             (De TV toont een eigen unieke code die je zo invoert)
         </p>
         
         <button class="btn btn-secondary" onclick="goBackToStart()">Terug naar start</button>
     </div>
 
-    <!-- STAGE 3: 1-to-1 Manual Screen Linking Entry -->
+    <!-- STAGE 3: 1-to-1 MANUAL SETUP -->
     <div id="wizardStep1to1Manual" class="wizard-card" style="display: none;">
         <h2>Koppel je TV</h2>
         <p style="color: #64748b; text-align: left;">
             1. Start de web-browser op de TV/Raspberry Pi op.<br>
-            2. Navigeer naar: <strong style="color: #007bff;">http://[server-ip]:8000/display</strong><br>
+            2. Navigeer naar: <strong style="color: #38bdf8;">http://[server-ip]:8000/display</strong><br>
             3. Voer de 4-letterige code die op de TV verschijnt hieronder in:
         </p>
         
@@ -314,15 +432,14 @@
         <div id="errorMsgManual" style="color: red; margin-top: 10px;"></div>
     </div>
 
-    <!-- 4. ACTUAL GAME CONSOLE -->
+    <!-- STAGE 4: MAIN GAME CONSOLE -->
     <div id="operatorContainer">
         <div class="header-banner">
-            <div style="font-size: 20px;">Spelcode: <strong id="currentGameCode" style="color: #ffd700; letter-spacing: 1px;">-</strong></div>
-            <button onclick="disconnect()" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">Verbinding Verbreken</button>
+            <div style="font-size: 20px;">Spelcode: <strong id="currentGameCode" style="color: #38bdf8; letter-spacing: 1px;">-</strong></div>
+            <button onclick="disconnect()" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Verbinding Verbreken</button>
         </div>
         
         <div class="layout-grid">
-            <!-- Left Panel: Bingo Board -->
             <div class="panel">
                 <h3>Bingo Nummer Selectie</h3>
                 <div class="grid" id="bingoGrid"></div>
@@ -332,7 +449,6 @@
                 </div>
             </div>
             
-            <!-- Right Panel: Screen Link Management -->
             <div class="panel">
                 <h3>Schermen Gekoppeld</h3>
                 <div id="manyToManyLinkBox">
@@ -341,9 +457,7 @@
                     <button class="btn btn-primary" style="padding: 8px; font-size:14px;" onclick="linkDisplay()">Koppel Scherm</button>
                 </div>
                 
-                <ul id="linkedDisplaysList" class="display-list">
-                    <!-- Dynamic active displays -->
-                </ul>
+                <ul id="linkedDisplaysList" class="display-list"></ul>
             </div>
         </div>
     </div>
@@ -354,6 +468,52 @@
         let pollInterval = null;
         let heartbeatInterval = null;
         let setupMode = '';
+        let currentDisplayTheme = 'dark';
+
+        // Initialize Console Theme from Storage
+        const savedConsoleTheme = localStorage.getItem('operator_console_theme') || 'dark';
+        document.body.classList.toggle('light-theme', savedConsoleTheme === 'light');
+        document.getElementById('consoleThemeBtn').innerText = savedConsoleTheme === 'light' ? 'Licht' : 'Donker';
+
+        function toggleConsoleTheme() {
+            const isLight = document.body.classList.contains('light-theme');
+            const targetTheme = isLight ? 'dark' : 'light';
+            document.body.classList.toggle('light-theme', targetTheme === 'light');
+            localStorage.setItem('operator_console_theme', targetTheme);
+            document.getElementById('consoleThemeBtn').innerText = targetTheme === 'light' ? 'Licht' : 'Donker';
+        }
+
+        async function toggleDisplayTheme() {
+            if (!activeGameCode || !activeToken) return;
+            const targetTheme = currentDisplayTheme === 'dark' ? 'light' : 'dark';
+            try {
+                const res = await fetch(`/api/action/${activeGameCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'set_display_theme', 
+                        theme: targetTheme, 
+                        token: activeToken 
+                    })
+                });
+                if (res.ok) {
+                    currentDisplayTheme = targetTheme;
+                    updateThemeUI();
+                }
+            } catch (e) {
+                console.error("Display theme switch failed:", e);
+            }
+        }
+
+        function updateThemeUI() {
+            const tvThemeBarControl = document.getElementById('tvThemeControl');
+            if (activeGameCode) {
+                tvThemeBarControl.style.display = 'flex';
+                document.getElementById('displayThemeBtn').innerText = currentDisplayTheme === 'light' ? 'Licht' : 'Donker';
+            } else {
+                tvThemeBarControl.style.display = 'none';
+            }
+        }
 
         function selectMode(mode) {
             setupMode = mode;
@@ -471,6 +631,7 @@
             document.getElementById('currentGameCode').innerText = activeGameCode;
             document.getElementById('operatorContainer').style.display = 'block';
             
+            updateThemeUI();
             updateState();
             pollInterval = setInterval(updateState, 2000);
             heartbeatInterval = setInterval(sendHeartbeat, 2000);
@@ -545,6 +706,9 @@
 
             activeGameCode = '';
             activeToken = '';
+            currentDisplayTheme = 'dark';
+            
+            updateThemeUI();
             
             document.getElementById('operatorContainer').style.display = 'none';
             document.getElementById('wizardStep1').style.display = 'block';
@@ -579,14 +743,14 @@
             const container = document.getElementById('linkedDisplaysList');
             container.innerHTML = '';
             if (displaysList.length === 0) {
-                container.innerHTML = '<li style="color: #94a3b8; font-size:14px; text-align: center; padding: 20px 0;">Geen actieve schermen gekoppeld.</li>';
+                container.innerHTML = '<li style="color: #64748b; font-size:14px; text-align: center; padding: 20px 0;">Geen actieve schermen gekoppeld.</li>';
                 return;
             }
             displaysList.forEach(code => {
                 const li = document.createElement('li');
                 li.className = 'display-item';
                 li.innerHTML = `
-                    <span>TV Code: <strong>${code}</strong></span>
+                    <span>TV Code: <strong style="color: #38bdf8;">${code}</strong></span>
                     <button class="unlink-btn" onclick="unlinkDisplay('${code}')">X</button>
                 `;
                 container.appendChild(li);
@@ -621,6 +785,11 @@
                 const data = await res.json();
                 renderGrid(data.called_numbers);
                 renderLinkedDisplays(data.linked_displays);
+                
+                if (data.display_theme) {
+                    currentDisplayTheme = data.display_theme;
+                    updateThemeUI();
+                }
             } catch (err) {
                 console.error("Error updating operator state", err);
             }

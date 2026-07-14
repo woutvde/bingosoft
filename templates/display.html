@@ -2,51 +2,284 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Projectiescherm</title>
+    <title>Bingo Projectiescherm</title>
     <style>
         body { 
-            background-color: #ffffff; 
-            text-align: center; 
-            font-family: Helvetica, Arial, sans-serif; 
+            background-color: #0f172a; /* Deep slate dark-mode */
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0;
-            padding-top: 10vh;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
-        .room-banner {
-            font-size: 24px;
-            background-color: #222;
-            color: white;
-            padding: 15px;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            font-weight: bold;
-            transition: background-color 0.5s ease;
+
+        /* 1. SETUP / UNCONNECTED VIEW */
+        #setupView {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
         }
-        .room-code {
-            color: #ffd700;
-            font-size: 28px;
+        .setup-card {
+            background: #1e293b;
+            padding: 50px 70px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            max-width: 500px;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .setup-title {
+            font-size: 20px;
+            color: #94a3b8;
+            text-transform: uppercase;
             letter-spacing: 2px;
+            margin-bottom: 15px;
+            font-weight: 600;
         }
-        .prev-label { font-size: 48px; color: #333; margin-top: 40px;}
-        .prev-nums { font-size: 96px; min-height: 120px; color: #555; }
-        .new-label { font-size: 48px; margin-top: 50px; color: #333; }
-        .new-num { font-size: 384px; font-weight: bold; line-height: 1; margin-top: 10px; color: #000; }
+        .setup-code {
+            font-size: 96px;
+            font-weight: 800;
+            color: #38bdf8; /* Glowing cyan */
+            letter-spacing: 8px;
+            margin: 10px 0;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        .setup-instructions {
+            font-size: 15px;
+            color: #64748b;
+            line-height: 1.6;
+            margin-top: 25px;
+        }
+
+        /* 2. CONNECTED / ACTIVE GAME VIEW */
+        #gameView {
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 6vh 5vw;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Minimalist Top-left Connection Dot */
+        .status-container {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            display: flex;
+            align-items: center;
+        }
+        .status-dot {
+            width: 14px;
+            height: 14px;
+            background-color: #22c55e; /* Neon green indicator */
+            border-radius: 50%;
+            box-shadow: 0 0 12px #22c55e;
+            animation: pulse 2s infinite;
+        }
+
+        /* Main Call-out Graphic */
+        .main-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+        }
+        .main-label {
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #64748b;
+            margin-bottom: 5px;
+            font-weight: 700;
+            transition: color 0.3s ease;
+        }
+        .main-number {
+            font-size: 38vh;
+            font-weight: 900;
+            line-height: 0.95;
+            color: #ffffff;
+            text-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transition: color 0.3s ease;
+        }
+        .waiting-placeholder {
+            font-size: 48px;
+            font-weight: 600;
+            color: #334155;
+            font-style: italic;
+            transition: color 0.3s ease;
+        }
+
+        /* Previous Numbers Footer */
+        .previous-panel {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            border-top: 1px solid #1e293b;
+            padding-top: 4vh;
+            transition: border-color 0.3s ease;
+        }
+        .previous-label {
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #475569;
+            font-weight: 700;
+            transition: color 0.3s ease;
+        }
+        .chips-container {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            min-height: 70px;
+        }
+        
+        .chip {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            font-size: 36px;
+            font-weight: 700;
+            padding: 10px 26px;
+            border-radius: 14px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transition: border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .chip.pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .chip.fade-out {
+            animation: fadeOut 0.3s ease forwards;
+        }
+
+        .chip.latest-prev {
+            border-color: #38bdf8;
+            color: #38bdf8;
+            box-shadow: 0 6px 15px rgba(56, 189, 248, 0.15);
+        }
+
+        /* ================= LIGHT MODE OVERRIDES ================= */
+        body.light-theme {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        body.light-theme .setup-card {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+        }
+        body.light-theme .setup-title {
+            color: #64748b;
+        }
+        body.light-theme .setup-code {
+            color: #0284c7;
+            text-shadow: 0 0 20px rgba(2, 132, 199, 0.1);
+        }
+        body.light-theme .setup-instructions {
+            color: #94a3b8;
+        }
+        body.light-theme .main-label {
+            color: #94a3b8;
+        }
+        body.light-theme .main-number {
+            color: #0f172a;
+        }
+        body.light-theme .waiting-placeholder {
+            color: #cbd5e1;
+        }
+        body.light-theme .previous-panel {
+            border-top-color: #cbd5e1;
+        }
+        body.light-theme .previous-label {
+            color: #94a3b8;
+        }
+        body.light-theme .chip {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #334155;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+        }
+        body.light-theme .chip.latest-prev {
+            border-color: #0284c7;
+            color: #0284c7;
+            box-shadow: 0 6px 15px rgba(2, 132, 199, 0.1);
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.8); }
+        }
     </style>
 </head>
 <body>
-    <div class="room-banner" id="banner">
-        Scherm Code: <span class="room-code" id="displayCodeDisplay">LOADING...</span>
+
+    <!-- STATE A: SETUP SCREEN -->
+    <div id="setupView">
+        <div class="setup-card">
+            <div class="setup-title">Scherm Koppelen</div>
+            <div class="setup-code" id="localDisplayCode">----</div>
+            <div class="setup-instructions">
+                Open de bingo console op je computer en voer de bovenstaande code in om te starten.
+            </div>
+        </div>
     </div>
 
-    <div class="prev-label">Vorige nummers:</div>
-    <div class="prev-nums" id="prevNums"></div>
-    
-    <div class="new-label">Nieuw nummer:</div>
-    <div class="new-num" id="newNum"></div>
+    <!-- STATE B: MINIMAL GAME BOARD -->
+    <div id="gameView">
+        <!-- Minimal Green Pulse Dot (Top Left) -->
+        <div class="status-container">
+            <div class="status-dot"></div>
+        </div>
+
+        <!-- Giant Active Number Display -->
+        <div class="main-display">
+            <div class="main-label" id="mainLabel"></div>
+            <div class="main-number" id="mainNumber"></div>
+        </div>
+
+        <!-- Modern Chips for Recents -->
+        <div class="previous-panel" id="previousPanel">
+            <div class="previous-label">Vorige getrokken nummers</div>
+            <div class="chips-container" id="chipsContainer"></div>
+        </div>
+    </div>
 
     <script>
         const displayCode = "{{ display_code }}";
+        document.getElementById('localDisplayCode').innerText = displayCode;
 
         async function updateState() {
             if (!displayCode) return;
@@ -54,27 +287,81 @@
                 const res = await fetch(`/api/state/${displayCode}`);
                 const data = await res.json();
                 
-                document.getElementById('newNum').innerText = data.last_number || '';
-                document.getElementById('prevNums').innerText = data.previous_numbers.join(', ');
-                
-                const codeSpan = document.getElementById('displayCodeDisplay');
-                const banner = document.getElementById('banner');
+                const setupView = document.getElementById('setupView');
+                const gameView = document.getElementById('gameView');
                 
                 if (data.operator_connected) {
-                    codeSpan.innerText = "VERBONDEN";
-                    codeSpan.style.color = "#00ff00";
-                    banner.style.backgroundColor = "#114a1c";
+                    setupView.style.display = 'none';
+                    gameView.style.display = 'flex';
+                    
+                    // Manage Remote Theme
+                    const activeTheme = data.display_theme || 'dark';
+                    document.body.classList.toggle('light-theme', activeTheme === 'light');
+                    
+                    // Display current active number
+                    const numDiv = document.getElementById('mainNumber');
+                    const labelDiv = document.getElementById('mainLabel');
+                    
+                    if (data.last_number) {
+                        labelDiv.innerText = "Nieuw Nummer";
+                        numDiv.className = "main-number";
+                        numDiv.innerText = data.last_number;
+                    } else {
+                        labelDiv.innerText = "";
+                        numDiv.className = "waiting-placeholder";
+                        numDiv.innerText = "Klaar voor de start...";
+                    }
+                    
+                    // Render Recents
+                    const chipsContainer = document.getElementById('chipsContainer');
+                    const previousPanel = document.getElementById('previousPanel');
+                    
+                    const rawPrev = data.previous_numbers || [];
+                    const recents = rawPrev.slice(-5);
+                    
+                    if (recents.length > 0) {
+                        previousPanel.style.visibility = 'visible';
+                        const currentChips = Array.from(chipsContainer.querySelectorAll('.chip:not(.fade-out)'));
+                        
+                        currentChips.forEach(chip => {
+                            const val = parseInt(chip.dataset.num, 10);
+                            if (!recents.includes(val)) {
+                                chip.classList.add('fade-out');
+                                setTimeout(() => chip.remove(), 300);
+                            }
+                        });
+                        
+                        recents.forEach((num, index) => {
+                            let chip = chipsContainer.querySelector(`.chip[data-num="${num}"]`);
+                            if (!chip) {
+                                chip = document.createElement('div');
+                                chip.className = 'chip pop-in';
+                                chip.dataset.num = num;
+                                chip.innerText = num;
+                                chipsContainer.appendChild(chip);
+                            }
+                            chip.style.order = index;
+                            if (index === recents.length - 1) {
+                                chip.classList.add('latest-prev');
+                            } else {
+                                chip.classList.remove('latest-prev');
+                            }
+                        });
+                    } else {
+                        previousPanel.style.visibility = 'hidden';
+                        chipsContainer.innerHTML = '';
+                    }
+                    
                 } else {
-                    codeSpan.innerText = displayCode;
-                    codeSpan.style.color = "#ffd700";
-                    banner.style.backgroundColor = "#222";
+                    setupView.style.display = 'flex';
+                    gameView.style.display = 'none';
+                    document.body.classList.remove('light-theme'); // Revert setup screen to safe dark base
                 }
             } catch (err) {
-                console.error("Error updating display state:", err);
+                console.error("Fout tijdens ophalen display status:", err);
             }
         }
 
-        document.getElementById('displayCodeDisplay').innerText = displayCode;
         setInterval(updateState, 1000);
         updateState();
     </script>
