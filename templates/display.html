@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Bingo Projectiescherm</title>
+    <title>Bingo Projection Screen</title>
     <style>
         body { 
             background-color: #0f172a; /* Deep slate dark-mode */
@@ -59,6 +59,22 @@
             color: #64748b;
             line-height: 1.6;
             margin-top: 25px;
+        }
+        .lang-select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+        .lang-select:hover {
+            border-color: #38bdf8;
+            color: #38bdf8;
         }
 
         /* 2. CONNECTED / ACTIVE GAME VIEW */
@@ -198,6 +214,15 @@
         body.light-theme .setup-instructions {
             color: #94a3b8;
         }
+        body.light-theme .lang-select {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .lang-select:hover {
+            border-color: #0284c7;
+            color: #0284c7;
+        }
         body.light-theme .main-label {
             color: #94a3b8;
         }
@@ -245,15 +270,23 @@
         }
     </style>
 </head>
-<body>
+<body data-page="display">
 
     <!-- STATE A: SETUP SCREEN -->
     <div id="setupView">
         <div class="setup-card">
-            <div class="setup-title">Scherm Koppelen</div>
+            <div class="setup-title" data-i18n="link_screen_title">Scherm Koppelen</div>
             <div class="setup-code" id="localDisplayCode">----</div>
-            <div class="setup-instructions">
+            <div class="setup-instructions" data-i18n="link_instructions">
                 Open de bingo console op je computer en voer de bovenstaande code in om te starten.
+            </div>
+            <div style="margin-top: 25px;">
+                <select id="langSelect" class="lang-select" onchange="setLang(this.value)">
+                    <option value="en">English</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="de">Deutsch</option>
+                    <option value="fr">Français</option>
+                </select>
             </div>
         </div>
     </div>
@@ -273,12 +306,14 @@
 
         <!-- Modern Chips for Recents -->
         <div class="previous-panel" id="previousPanel">
-            <div class="previous-label">Vorige getrokken nummers</div>
+            <div class="previous-label" data-i18n="previous_numbers">Vorige getrokken nummers</div>
             <div class="chips-container" id="chipsContainer"></div>
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='i18n.js') }}"></script>
     <script>
+        applyLanguage();
         const displayCode = "{{ display_code }}";
         document.getElementById('localDisplayCode').innerText = displayCode;
 
@@ -304,13 +339,13 @@
                     const labelDiv = document.getElementById('mainLabel');
                     
                     if (data.last_number) {
-                        labelDiv.innerText = "Nieuw Nummer";
+                        labelDiv.innerText = t('new_number');
                         numDiv.className = "main-number";
                         numDiv.innerText = data.last_number;
                     } else {
                         labelDiv.innerText = "";
                         numDiv.className = "waiting-placeholder";
-                        numDiv.innerText = "Klaar voor de start...";
+                        numDiv.innerText = t('ready');
                     }
                     
                     // Render Recents

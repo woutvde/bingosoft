@@ -1,58 +1,63 @@
 # bingosoft
 
-Bingo-server voor een operatorconsole en één of meer TV-projectieschermen.
-De operator trekt nummers (1-90) op `/operator`; schermen openen `/display`,
-krijgen een 4-lettercode en worden door de operator gekoppeld aan het spel.
-Spelstatus wordt opgeslagen in een JSON-bestand, dus spellen overleven een
-serverrestart.
+Bingo server with an operator console and one or more TV projection screens.
+The operator draws numbers (1-90) on `/operator`; screens open `/display`, get
+a 4-letter code, and are linked to the game by the operator. Game state is
+stored in a JSON file, so games survive a server restart.
 
-## Snel starten (ontwikkeling)
+The UI is available in **English, Dutch, German and French** via the language
+picker (top right on the console, on the setup screen of the display). The
+choice is stored in `localStorage`; without a choice the browser language is
+used, falling back to Dutch. Server error messages follow the `lang` field
+sent by the frontend (`en`/`nl`/`de`/`fr`, default `nl`).
+
+## Quick start (development)
 
 ```bash
 pip install -r requirements.txt
-python app.py          # op http://localhost:8000
+python app.py          # on http://localhost:8000
 ```
 
-Zet `FLASK_DEBUG=1` voor de Werkzeug-reloader tijdens ontwikkeling.
-`HOST` en `PORT` zijn instelbaar via omgevingsvariabelen (standaard `0.0.0.0:8000`).
+Set `FLASK_DEBUG=1` for the Werkzeug reloader during development.
+`HOST` and `PORT` can be set via environment variables (default `0.0.0.0:8000`).
 
-## Productie (Docker)
+## Production (Docker)
 
 ```bash
 docker build -t bingosoft .
 docker run -p 8000:8000 -e BINGO_DATA_FILE=/data/bingo_data.json -v bingo-data:/data bingosoft
 ```
 
-of direct met het gepubliceerde image:
+or directly with the published image:
 
 ```bash
 docker run -p 8000:8000 ghcr.io/woutvde/bingosoft:latest
 ```
 
-De container draait **gunicorn** (1 worker, 8 threads) in plaats van de
-Werkzeug dev-server. Gebruik altijd precies 1 worker: de spelstatus leeft in
-het geheugen van het proces plus één JSON-bestand, dus extra workers zouden elk
-een eigen, afwijkende staat krijgen.
+The container runs **gunicorn** (1 worker, 8 threads) instead of the Werkzeug
+dev server. Always use exactly 1 worker: game state lives in the process
+memory plus a single JSON file, so extra workers would each get a divergent
+state.
 
-### Configuratie via omgevingsvariabelen
+### Configuration via environment variables
 
-| Variabele         | Standaard          | Beschrijving                                   |
-|-------------------|--------------------|------------------------------------------------|
-| `BINGO_DATA_FILE` | `bingo_data.json`  | Pad van het JSON-opslagbestand (mount hier een volume op) |
+| Variable          | Default            | Description                                             |
+|-------------------|--------------------|---------------------------------------------------------|
+| `BINGO_DATA_FILE` | `bingo_data.json`  | Path of the JSON storage file (mount a volume here)     |
+| `PORT` / `HOST`   | `8000` / `0.0.0.0` | Only used by `python app.py` (development)              |
+| `LOG_LEVEL`       | `INFO`             | Log level                                               |
 
-| `PORT` / `HOST`   | `8000` / `0.0.0.0` | Alleen voor `python app.py` (dev)              |
-| `LOG_LEVEL`       | `INFO`             | Logniveau                                      |
+### Recommendations for production
 
-
-### Aanbevelingen voor productie
-
-- Zet de server achter een reverse proxy met TLS (bijv. nginx/Caddy). De app
-  zelf terminate geen HTTPS; spelcodes en tokens gaan anders leesbaar over het netwerk.
-- Beperk netwerktoegang tot het lokale (VPN-)netwerk; de 4-letter spelcode is
-  de enige barrière voor de operatorconsole.
-- `/health` is beschikbaar als healthcheck (zit ook als `HEALTHCHECK` in de image).
-- Verlopen spellen (1 uur geen heartbeat) worden automatisch opgeruimd door een
-  achtergrondtaak; bij het opstarten gebeurt dit meteen een keer.
+- Put the server behind a reverse proxy with TLS (e.g. nginx/Caddy). The app
+  itself does not terminate HTTPS; otherwise game codes and tokens travel
+  readable over the network.
+- Restrict network access to the local (VPN) network; the 4-letter game code
+  is the only barrier to the operator console.
+- `/health` is available as a health check (also configured as `HEALTHCHECK`
+  in the image).
+- Expired games (no heartbeat for 1 hour) are cleaned up automatically by a
+  background task, and once at startup.
 
 ## Tests
 
@@ -60,35 +65,36 @@ een eigen, afwijkende staat krijgen.
 python -m unittest discover -s tests -t . -v
 ```
 
-De tests draaien met de stdlib `unittest` (geen extra dependencies) tegen een
-tijdelijke datastore.
+The tests use the stdlib `unittest` (no extra dependencies) against a
+temporary datastore.
 
-## API-overzicht
+## API overview
 
-| Endpoint | Methode | Beschrijving |
+| Endpoint | Method | Description |
 |---|---|---|
-| `/` of `/operator` | GET | Operatorconsole |
-| `/display` | GET | TV-scherm met nieuwe koppelcode |
-| `/display/auto_link/<game_code>` | GET | TV direct gekoppeld aan spel (zelfde machine) |
-| `/health` | GET | Healthcheck |
-| `/api/create_game` | POST | Nieuw spel → `game_code` + `token` |
-| `/api/join_game/<game_code>` | POST | Spel hervatten met code → `token` |
-| `/api/heartbeat/<game_code>` | POST | Houdt sessie actief (vereist token) |
-| `/api/link_display/<game_code>` | POST | Koppel TV-code aan spel (vereist token) |
-| `/api/unlink_display/<game_code>` | POST | Ontkoppel TV (vereist token) |
-| `/api/disconnect/<game_code>` | POST | Spel beëindigen (vereist token) |
-| `/api/action/<game_code>` | POST | `call` / `undo` / `reset` / `set_display_theme` (vereist token) |
-| `/api/operator_state/<game_code>` | GET | Status voor de console |
-| `/api/state/<display_code>` | GET | Status voor een TV-scherm |
+| `/` or `/operator` | GET | Operator console |
+| `/display` | GET | TV screen with a new pairing code |
+| `/display/auto_link/<game_code>` | GET | TV screen linked directly to a game (same machine) |
+| `/health` | GET | Health check |
+| `/api/create_game` | POST | New game → `game_code` + `token` |
+| `/api/join_game/<game_code>` | POST | Resume a game by code → `token` |
+| `/api/heartbeat/<game_code>` | POST | Keep the session alive (requires token) |
+| `/api/link_display/<game_code>` | POST | Link a TV code to the game (requires token) |
+| `/api/unlink_display/<game_code>` | POST | Unlink a TV (requires token) |
+| `/api/disconnect/<game_code>` | POST | End the game (requires token) |
+| `/api/action/<game_code>` | POST | `call` / `undo` / `reset` / `set_display_theme` (requires token) |
+| `/api/operator_state/<game_code>` | GET | State for the console |
+| `/api/state/<display_code>` | GET | State for a TV screen |
 
 ## CI
 
-GitHub Actions draait bij elke PR de testsuite en bouwt/pusht de Docker-image
-naar GHCR (bij push naar `main` en tags `v*`).
+GitHub Actions runs the test suite on every PR and builds/pushes the Docker
+image to GHCR (on pushes to `main` and tags `v*`).
 
-## Bestanden
+## Files
 
-- `app.py` — Flask-applicatie, JSON-opslag en API
-- `templates/input.html` — operatorconsole
-- `templates/display.html` — projectiescherm
-- `bingov3.1.py` — oude tkinter-prototype (niet meer in de webapp gebruikt)
+- `app.py` — Flask application, JSON storage and API
+- `templates/input.html` — operator console
+- `templates/display.html` — projection screen
+- `static/i18n.js` — UI translations (EN/NL/DE/FR) and language picker logic
+- `bingov3.1.py` — old tkinter prototype (no longer used by the web app)
