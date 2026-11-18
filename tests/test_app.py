@@ -149,6 +149,32 @@ class BingoApiTest(unittest.TestCase):
         state = self.client.get(f'/api/state/{display_code}').get_json()
         self.assertFalse(state['operator_connected'])
 
+    def test_error_messages_are_localized(self):
+        res = self.post_json('/api/join_game/ZZZZ', {'lang': 'en'})
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.get_json()['error'], 'Game code not found')
+        res = self.post_json('/api/join_game/ZZZZ', {'lang': 'de'})
+        self.assertEqual(res.get_json()['error'], 'Spielcode nicht gefunden')
+        res = self.post_json('/api/join_game/ZZZZ', {'lang': 'fr'})
+        self.assertEqual(res.get_json()['error'], 'Code de partie introuvable')
+        # Zonder lang-parameter blijft de standaardtaal (Nederlands) behouden
+        res = self.post_json('/api/join_game/ZZZZ', {})
+        self.assertEqual(res.get_json()['error'], 'Spelcode niet gevonden')
+        # Onbekende taal valt terug op de standaardtaal
+        res = self.post_json('/api/join_game/ZZZZ', {'lang': 'xx'})
+        self.assertEqual(res.get_json()['error'], 'Spelcode niet gevonden')
+        # Query string werkt ook
+        res = self.client.post('/api/join_game/ZZZZ?lang=en')
+        self.assertEqual(res.get_json()['error'], 'Game code not found')
+
+    def test_i18n_static_file_is_served(self):
+        res = self.client.get('/static/i18n.js')
+        self.assertEqual(res.status_code, 200)
+        body = res.get_data(as_text=True)
+        for lang in ('en', 'nl', 'de', 'fr'):
+            self.assertIn(f"{lang}: {{", body)
+        self.assertIn('SUPPORTED_LANGS', body)
+
     def test_non_json_body_does_not_crash(self):
         game_code, _ = self.create_game()
         res = self.client.post(

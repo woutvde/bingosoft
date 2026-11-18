@@ -19,6 +19,44 @@ app = Flask(__name__)
 
 DATA_FILE = os.environ.get('BINGO_DATA_FILE', 'bingo_data.json')
 STALE_TIMEOUT = 3600  # seconden zonder heartbeat voordat een spel wordt opgeruimd
+DEFAULT_LANG = 'nl'
+ERROR_MESSAGES = {
+    'en': {
+        'game_code_not_found': 'Game code not found',
+        'game_not_found': 'Game not found',
+        'not_authorized': 'Not authorized',
+        'invalid_display_code': 'Invalid or expired TV code. Restart the TV screen.',
+    },
+    'nl': {
+        'game_code_not_found': 'Spelcode niet gevonden',
+        'game_not_found': 'Spel niet gevonden',
+        'not_authorized': 'Niet geautoriseerd',
+        'invalid_display_code': 'Ongeldige of verlopen TV-code. Herstart het TV-scherm.',
+    },
+    'de': {
+        'game_code_not_found': 'Spielcode nicht gefunden',
+        'game_not_found': 'Spiel nicht gefunden',
+        'not_authorized': 'Nicht autorisiert',
+        'invalid_display_code': 'Ungültiger oder abgelaufener TV-Code. TV-Bildschirm neu starten.',
+    },
+    'fr': {
+        'game_code_not_found': 'Code de partie introuvable',
+        'game_not_found': 'Partie introuvable',
+        'not_authorized': 'Non autorisé',
+        'invalid_display_code': "Code TV invalide ou expiré. Redémarrez l'écran TV.",
+    },
+}
+
+
+def request_lang():
+    """Bepaalt de taal voor foutmeldingen uit de JSON-body of query string."""
+    data = request.get_json(silent=True) or {}
+    lang = data.get('lang') or request.args.get('lang') or DEFAULT_LANG
+    return lang if lang in ERROR_MESSAGES else DEFAULT_LANG
+
+
+def api_error(key, status):
+    return jsonify({"error": ERROR_MESSAGES[request_lang()][key]}), status
 
 
 def generate_code(length=4):
@@ -216,7 +254,7 @@ def join_game(game_code):
     with storage.lock:
         game = storage.games.get(game_code)
         if game is None:
-            return jsonify({"error": "Spelcode niet gevonden"}), 404
+            return api_error('game_code_not_found', 404)
         game.touch()
         storage.save()
         return jsonify({"token": game.token})
@@ -229,11 +267,11 @@ def heartbeat(game_code):
     with storage.lock:
         game = storage.games.get(game_code)
         if game is None:
-            return jsonify({"error": "Spel niet gevonden"}), 404
+            return api_error('game_not_found', 404)
         data = request.get_json(silent=True) or {}
         token = data.get('token')
         if game.token != token:
-            return jsonify({"error": "Niet geautoriseerd"}), 401
+            return api_error('not_authorized', 401)
         game.touch()
         storage.save()
         return jsonify({"status": "alive"})
@@ -250,11 +288,11 @@ def link_display(game_code):
     with storage.lock:
         game = storage.games.get(game_code)
         if game is None:
-            return jsonify({"error": "Spel niet gevonden"}), 404
+            return api_error('game_not_found', 404)
         if game.token != token:
-            return jsonify({"error": "Niet geautoriseerd"}), 401
+            return api_error('not_authorized', 401)
         if display_code not in storage.pending_displays and display_code not in storage.display_to_game:
-            return jsonify({"error": "Ongeldige of verlopen TV-code. Herstart het TV-scherm."}), 400
+            return api_error('invalid_display_code', 400)
 
         # Ontkoppel eerst van eventueel vorig spel
         if display_code in storage.display_to_game:
@@ -287,9 +325,9 @@ def unlink_display(game_code):
     with storage.lock:
         game = storage.games.get(game_code)
         if game is None:
-            return jsonify({"error": "Spel niet gevonden"}), 404
+            return api_error('game_not_found', 404)
         if game.token != token:
-            return jsonify({"error": "Niet geautoriseerd"}), 401
+            return api_error('not_authorized', 401)
 
         if display_code in game.linked_displays:
             game.linked_displays.remove(display_code)
@@ -331,9 +369,9 @@ def game_action(game_code):
     with storage.lock:
         game = storage.games.get(game_code)
         if game is None:
-            return jsonify({"error": "Spel niet gevonden"}), 404
+            return api_error('game_not_found', 404)
         if game.token != token:
-            return jsonify({"error": "Niet geautoriseerd"}), 401
+            return api_error('not_authorized', 401)
 
         game.touch()
 
@@ -368,7 +406,7 @@ def operator_state(game_code):
     with storage.lock:
         game = storage.games.get(game_code)
         if game is None:
-            return jsonify({"error": "Spel niet gevonden"}), 404
+            return api_error('game_not_found', 404)
         return jsonify({
             "called_numbers": game.called_numbers,
             "linked_displays": game.linked_displays,

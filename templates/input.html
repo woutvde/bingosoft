@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Bingo Operatorscherm</title>
+    <title>Bingo Operator Console</title>
     <style>
         /* Base Slate Dark Theme Styles */
         body { 
@@ -52,6 +52,21 @@
             transition: all 0.2s ease;
         }
         .theme-toggle-btn:hover {
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+        .theme-bar select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 4px 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .theme-bar select:hover {
             border-color: #38bdf8;
             color: #38bdf8;
         }
@@ -301,6 +316,15 @@
             border-color: #0284c7;
             color: #0284c7;
         }
+        body.light-theme .theme-bar select {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .theme-bar select:hover {
+            border-color: #0284c7;
+            color: #0284c7;
+        }
         body.light-theme .wizard-card, body.light-theme .panel, body.light-theme .header-banner {
             background: #ffffff;
             border-color: #cbd5e1;
@@ -347,24 +371,33 @@
         }
     </style>
 </head>
-<body>
+<body data-page="operator">
 
     <!-- TOP CONTROL FLOATING BAR -->
     <div class="theme-bar">
         <div class="theme-control">
-            <span>Console:</span>
+            <span data-i18n="console">Console:</span>
             <button onclick="toggleConsoleTheme()" id="consoleThemeBtn" class="theme-toggle-btn">Donker</button>
         </div>
         <div class="theme-control" id="tvThemeControl" style="display: none;">
-            <span>TV Scherm:</span>
+            <span data-i18n="tv_screen">TV Scherm:</span>
             <button onclick="toggleDisplayTheme()" id="displayThemeBtn" class="theme-toggle-btn">Donker</button>
+        </div>
+        <div class="theme-control">
+            <span data-i18n="language">Taal:</span>
+            <select id="langSelect" onchange="setLang(this.value)">
+                <option value="en">EN</option>
+                <option value="nl">NL</option>
+                <option value="de">DE</option>
+                <option value="fr">FR</option>
+            </select>
         </div>
     </div>
 
     <!-- STAGE 1: MODE SELECTOR -->
     <div id="wizardStep1" class="wizard-card">
-        <h2>Bingo Operator Setup</h2>
-        <p style="color: #64748b;">Kies hoe je de bingo schermen wilt beheren en opstarten.</p>
+        <h2 data-i18n="setup_heading">Bingo Operator Setup</h2>
+        <p style="color: #64748b;" data-i18n="setup_subtitle">Kies hoe je de bingo schermen wilt beheren en opstarten.</p>
         
         <div class="options-grid">
             <!-- OPTIE 1: Lokale Modus (Start direct 1:1 lokaal scherm) -->
@@ -380,8 +413,8 @@
                         </g>
                     </svg>
                 </div>
-                <h3>Lokale Modus</h3>
-                <p>Start direct op en open de projectie in een nieuw venster op deze computer.</p>
+                <h3 data-i18n="mode_local">Lokale Modus</h3>
+                <p data-i18n="mode_local_desc">Start direct op en open de projectie in een nieuw venster op deze computer.</p>
             </div>
             
             <!-- OPTIE 2: Draadloze Modus (Start direct 1:M) -->
@@ -400,8 +433,8 @@
                         <path d="M 0 3 L 0 15 L 20 15 L 20 3 L 0 3 z M 1 4 L 19 4 L 19 14 L 1 14 L 1 4 z M 5 16 L 5 17 L 15 17 L 15 16 L 5 16 z" fill="currentColor"/>
                     </svg>
                 </div>
-                <h3>Draadloze Modus</h3>
-                <p>Koppel meerdere externe apparaten (zoals TV's of Raspberry Pi's) draadloos via code koppelingen.</p>
+                <h3 data-i18n="mode_wireless">Draadloze Modus</h3>
+                <p data-i18n="mode_wireless_desc">Koppel meerdere externe apparaten (zoals TV's of Raspberry Pi's) draadloos via code koppelingen.</p>
             </div>
 
             <!-- OPTIE 3: Gebruik als Scherm -->
@@ -423,40 +456,40 @@
                         </g>
                     </svg>
                 </div>
-                <h3>Gebruik als Scherm</h3>
-                <p>Start dit apparaat op als passieve TV-ontvanger om bingo-nummers te tonen.</p>
+                <h3 data-i18n="mode_display">Gebruik als Scherm</h3>
+                <p data-i18n="mode_display_desc">Start dit apparaat op als passieve TV-ontvanger om bingo-nummers te tonen.</p>
             </div>
         </div>
         
-        <div class="divider"><span>OF SPEELSESSIE HERSTELLEN</span></div>
-        <input type="text" id="gameCodeInput" class="join-input" maxlength="4" placeholder="CODE">
-        <button class="btn btn-secondary" onclick="resumeGame()">Hervat Bestaand Spel</button>
+        <div class="divider"><span data-i18n="resume_divider">OF SPEELSESSIE HERSTELLEN</span></div>
+        <input type="text" id="gameCodeInput" class="join-input" maxlength="4" placeholder="CODE" data-i18n-placeholder="code_placeholder">
+        <button class="btn btn-secondary" onclick="resumeGame()" data-i18n="resume_button">Hervat Bestaand Spel</button>
         <div id="errorMsg1" style="color: red; margin-top: 10px;"></div>
     </div>
 
     <!-- MAIN GAME CONSOLE -->
     <div id="operatorContainer">
         <div class="header-banner">
-            <div style="font-size: 20px;">Spelcode: <strong id="currentGameCode" style="color: #38bdf8; letter-spacing: 1px;">-</strong></div>
-            <button onclick="disconnect()" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Spel stopzetten</button>
+            <div style="font-size: 20px;"><span data-i18n="game_code_label">Spelcode:</span> <strong id="currentGameCode" style="color: #38bdf8; letter-spacing: 1px;">-</strong></div>
+            <button onclick="disconnect()" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;" data-i18n="stop_game">Spel stopzetten</button>
         </div>
         
         <div class="layout-grid">
             <div class="panel">
-                <h3>Bingo Nummer Selectie</h3>
+                <h3 data-i18n="number_selection">Bingo Nummer Selectie</h3>
                 <div class="grid" id="bingoGrid"></div>
                 <div class="controls">
-                    <button class="btn btn-secondary" style="margin: 0;" onclick="sendAction('undo')">Laatste Herstellen</button>
-                    <button class="btn" style="background-color: #f59e0b; color: white; margin: 0;" onclick="sendAction('reset')">Reset Kaart</button>
+                    <button class="btn btn-secondary" style="margin: 0;" onclick="sendAction('undo')" data-i18n="undo">Laatste Herstellen</button>
+                    <button class="btn" style="background-color: #f59e0b; color: white; margin: 0;" onclick="sendAction('reset')" data-i18n="reset_board">Reset Kaart</button>
                 </div>
             </div>
             
             <div class="panel" id="displayPanel">
-                <h3>Schermen Gekoppeld</h3>
+                <h3 data-i18n="linked_screens">Schermen Gekoppeld</h3>
                 <div id="manyToManyLinkBox">
-                    <p style="font-size: 13px; color: #64748b;">Voer display-code in om extra scherm toe te voegen:</p>
-                    <input type="text" id="displayCodeInput" class="display-input" maxlength="4" placeholder="TV CODE">
-                    <button class="btn btn-primary" style="padding: 8px; font-size:14px;" onclick="linkDisplay()">Koppel Scherm</button>
+                    <p style="font-size: 13px; color: #64748b;" data-i18n="enter_display_code">Voer display-code in om extra scherm toe te voegen:</p>
+                    <input type="text" id="displayCodeInput" class="display-input" maxlength="4" placeholder="TV CODE" data-i18n-placeholder="tv_code_placeholder">
+                    <button class="btn btn-primary" style="padding: 8px; font-size:14px;" onclick="linkDisplay()" data-i18n="link_screen">Koppel Scherm</button>
                 </div>
                 
                 <ul id="linkedDisplaysList" class="display-list"></ul>
@@ -464,6 +497,7 @@
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='i18n.js') }}"></script>
     <script>
         let activeGameCode = '';
         let activeToken = '';
@@ -472,17 +506,28 @@
         let currentDisplayTheme = 'dark';
         let displayPopupWindow = null;
 
+        function apiBody(obj) {
+            obj.lang = currentLang;
+            return JSON.stringify(obj);
+        }
+
+        function refreshThemeButtons() {
+            document.getElementById('consoleThemeBtn').innerText = document.body.classList.contains('light-theme') ? t('light') : t('dark');
+            document.getElementById('displayThemeBtn').innerText = currentDisplayTheme === 'light' ? t('light') : t('dark');
+        }
+
         // Initialize Console Theme from Storage
         const savedConsoleTheme = localStorage.getItem('operator_console_theme') || 'dark';
         document.body.classList.toggle('light-theme', savedConsoleTheme === 'light');
-        document.getElementById('consoleThemeBtn').innerText = savedConsoleTheme === 'light' ? 'Licht' : 'Donker';
+        window.onLanguageChange = refreshThemeButtons;
+        applyLanguage();
 
         function toggleConsoleTheme() {
             const isLight = document.body.classList.contains('light-theme');
             const targetTheme = isLight ? 'dark' : 'light';
             document.body.classList.toggle('light-theme', targetTheme === 'light');
             localStorage.setItem('operator_console_theme', targetTheme);
-            document.getElementById('consoleThemeBtn').innerText = targetTheme === 'light' ? 'Licht' : 'Donker';
+            refreshThemeButtons();
         }
 
         async function toggleDisplayTheme() {
@@ -492,7 +537,7 @@
                 const res = await fetch(`/api/action/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    body: apiBody({ 
                         action: 'set_display_theme', 
                         theme: targetTheme, 
                         token: activeToken 
@@ -511,7 +556,7 @@
             const tvThemeBarControl = document.getElementById('tvThemeControl');
             if (activeGameCode) {
                 tvThemeBarControl.style.display = 'flex';
-                document.getElementById('displayThemeBtn').innerText = currentDisplayTheme === 'light' ? 'Licht' : 'Donker';
+                refreshThemeButtons();
             } else {
                 tvThemeBarControl.style.display = 'none';
             }
@@ -541,7 +586,7 @@
                 }
                 document.getElementById('operatorContainer').classList.add('one-column');
             } catch (err) {
-                alert("Kon geen game instantie starten.");
+                alert(t('err_start_game'));
             }
         }
 
@@ -561,19 +606,19 @@
                 }
                 document.getElementById('operatorContainer').classList.remove('one-column');
             } catch (err) {
-                alert("Fout bij aanmaken van multi-screen spel.");
+                alert(t('err_start_multi'));
             }
         }
 
         async function resumeGame() {
             const code = document.getElementById('gameCodeInput').value.trim().toUpperCase();
             if (code.length !== 4) {
-                document.getElementById('errorMsg1').innerText = "Voer een geldige code in.";
+                document.getElementById('errorMsg1').innerText = t('err_invalid_code');
                 return;
             }
 
             try {
-                const res = await fetch(`/api/join_game/${code}`, { method: 'POST' });
+                const res = await fetch(`/api/join_game/${code}?lang=${currentLang}`, { method: 'POST' });
                 const data = await res.json();
                 
                 if (res.ok) {
@@ -587,10 +632,10 @@
                     }
                     document.getElementById('operatorContainer').classList.remove('one-column');
                 } else {
-                    document.getElementById('errorMsg1').innerText = data.error || "Fout bij hervatten.";
+                    document.getElementById('errorMsg1').innerText = data.error || t('err_resume');
                 }
             } catch (err) {
-                document.getElementById('errorMsg1').innerText = "Netwerkfout.";
+                document.getElementById('errorMsg1').innerText = t('err_network');
             }
         }
 
@@ -613,10 +658,10 @@
                 const res = await fetch(`/api/heartbeat/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: activeToken })
+                    body: apiBody({ token: activeToken })
                 });
                 if (res.status === 401) {
-                    alert("Sessie verlopen.");
+                    alert(t('session_expired'));
                     disconnect();
                 }
             } catch (e) {
@@ -628,24 +673,24 @@
             const input = document.getElementById('displayCodeInput');
             const displayCode = input.value.trim().toUpperCase();
             if (displayCode.length !== 4) {
-                alert("Voer een 4-letterige code in.");
+                alert(t('err_display_code'));
                 return;
             }
             try {
                 const res = await fetch(`/api/link_display/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: activeToken, display_code: displayCode })
+                    body: apiBody({ token: activeToken, display_code: displayCode })
                 });
                 if (res.ok) {
                     input.value = '';
                     updateState();
                 } else {
                     const d = await res.json();
-                    alert(d.error || "Mislukt");
+                    alert(d.error || t('err_failed'));
                 }
             } catch (e) {
-                alert("Verbindingsfout.");
+                alert(t('err_conn'));
             }
         }
 
@@ -654,7 +699,7 @@
                 await fetch(`/api/unlink_display/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: activeToken, display_code: displayCode })
+                    body: apiBody({ token: activeToken, display_code: displayCode })
                 });
                 updateState();
             } catch (e) {
@@ -670,7 +715,7 @@
                 await fetch(`/api/disconnect/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: activeToken })
+                    body: apiBody({ token: activeToken })
                 }).catch(() => {});
             }
 
@@ -720,14 +765,14 @@
             const container = document.getElementById('linkedDisplaysList');
             container.innerHTML = '';
             if (displaysList.length === 0) {
-                container.innerHTML = '<li style="color: #64748b; font-size:14px; text-align: center; padding: 20px 0;">Geen actieve schermen gekoppeld.</li>';
+                container.innerHTML = '<li style="color: #64748b; font-size:14px; text-align: center; padding: 20px 0;">' + t('no_screens') + '</li>';
                 return;
             }
             displaysList.forEach(code => {
                 const li = document.createElement('li');
                 li.className = 'display-item';
                 li.innerHTML = `
-                    <span>TV Code: <strong style="color: #38bdf8;">${code}</strong></span>
+                    <span>${t('tv_code')} <strong style="color: #38bdf8;">${code}</strong></span>
                     <button class="unlink-btn" onclick="unlinkDisplay('${code}')">X</button>
                 `;
                 container.appendChild(li);
@@ -736,13 +781,13 @@
 
         async function sendAction(action, number = null) {
             if (!activeGameCode || !activeToken) return;
-            if (action === 'reset' && !confirm("Weet je zeker dat je alle getrokken nummers wilt resetten?")) return;
+            if (action === 'reset' && !confirm(t('confirm_reset'))) return;
 
             try {
                 const res = await fetch(`/api/action/${activeGameCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action, number, token: activeToken })
+                    body: apiBody({ action, number, token: activeToken })
                 });
                 if (res.ok) updateState();
             } catch (err) {
@@ -755,7 +800,7 @@
             try {
                 const res = await fetch(`/api/operator_state/${activeGameCode}`);
                 if (res.status === 404) {
-                    alert("Sessie verlopen.");
+                    alert(t('session_expired'));
                     disconnect();
                     return;
                 }
