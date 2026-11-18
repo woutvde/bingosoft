@@ -1,0 +1,6 @@
+.git
+.github
+__pycache__
+*.pyc
+bingo_data.json
+bingo_data.json.tmp
