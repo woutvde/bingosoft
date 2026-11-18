@@ -1,6 +1,7 @@
 import json
+import logging
 import os
-import random
+import secrets
 import string
 import threading
 import time
@@ -8,15 +9,21 @@ import uuid
 
 from flask import Flask, jsonify, render_template, request
 
+logging.basicConfig(
+    level=os.environ.get('LOG_LEVEL', 'INFO').upper(),
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+)
+logger = logging.getLogger('bingo')
+
 app = Flask(__name__)
 
-DATA_FILE = 'bingo_data.json'
+DATA_FILE = os.environ.get('BINGO_DATA_FILE', 'bingo_data.json')
 STALE_TIMEOUT = 3600  # seconden zonder heartbeat voordat een spel wordt opgeruimd
 
 
 def generate_code(length=4):
     """Genereert een willekeurige unieke 4-letterige code (bijv. 'XQRT')."""
-    return ''.join(random.choices(string.ascii_uppercase, k=length))
+    return ''.join(secrets.choice(string.ascii_uppercase) for _ in range(length))
 
 
 class BingoGame:
@@ -81,7 +88,7 @@ class Storage:
             self.pending_displays = set(data.get('pending_displays', []))
             self.display_to_game = data.get('display_to_game', {})
         except (json.JSONDecodeError, OSError) as e:
-            print(f"Waarschuwing: kon data niet laden uit {self.path}: {e}")
+            logger.warning("Kon data niet laden uit %s: %s", self.path, e)
 
     def save(self):
         data = {
@@ -93,6 +100,10 @@ class Storage:
         tmp = self.path + '.tmp'
         with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        # Het bestand bevat sessietokens: alleen leesbaar voor de serveruser.
+        os.chmod(tmp, 0o600)
         os.replace(tmp, self.path)
 
 
@@ -123,12 +134,24 @@ def cleanup_stale_games():
 def cleanup_loop():
     while True:
         time.sleep(STALE_TIMEOUT)
-        cleanup_stale_games()
+        stale = cleanup_stale_games()
+        if stale:
+            logger.info("Opruimen van %d verlopen spel(len): %s", len(stale), ", ".join(stale))
+
+
+def start_background_tasks():
+    threading.Thread(target=cleanup_loop, daemon=True, name='cleanup-loop').start()
 
 
 # =====================================================================
 # HTML ROUTES
 # =====================================================================
+
+@app.route('/health')
+def health():
+    """Gezondheidscheck voor load balancers en container-orchestratie."""
+    return jsonify({"status": "ok"})
+
 
 @app.route('/')
 @app.route('/operator')
@@ -207,7 +230,7 @@ def heartbeat(game_code):
         game = storage.games.get(game_code)
         if game is None:
             return jsonify({"error": "Spel niet gevonden"}), 404
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         token = data.get('token')
         if game.token != token:
             return jsonify({"error": "Niet geautoriseerd"}), 401
@@ -220,7 +243,7 @@ def heartbeat(game_code):
 def link_display(game_code):
     """Koppelt een fysiek TV-scherm (via de 4-lettercode) aan een spel."""
     game_code = game_code.upper()
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     token = data.get('token')
     display_code = data.get('display_code', '').upper()
 
@@ -257,7 +280,7 @@ def link_display(game_code):
 def unlink_display(game_code):
     """Ontkoppelt een TV-scherm zodat het weer terug naar het koppelscherm gaat."""
     game_code = game_code.upper()
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     token = data.get('token')
     display_code = data.get('display_code', '').upper()
 
@@ -282,7 +305,7 @@ def unlink_display(game_code):
 def disconnect(game_code):
     """Beëindigt de sessie en stuurt alle gekoppelde TV's terug naar het startscherm."""
     game_code = game_code.upper()
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     token = data.get('token')
 
     with storage.lock:
@@ -300,7 +323,7 @@ def disconnect(game_code):
 def game_action(game_code):
     """Verwerkt acties van de operator (getal trekken, herstellen, reset, thema wijzigen)."""
     game_code = game_code.upper()
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     token = data.get('token')
     action = data.get('action')
     number = data.get('number')
@@ -379,7 +402,16 @@ if __name__ == '__main__':
     # Achtergrondtaak die verlopen spellen periodiek opruimt.
     # WERKZEUG_RUN_MAIN is alleen 'true' in het echte serverproces (niet de reloader),
     # zodat de thread niet dubbel wordt gestart bij debug=True.
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        threading.Thread(target=cleanup_loop, daemon=True).start()
-    # Luistert op poort 8000 en is bereikbaar via het lokale netwerk (0.0.0.0)
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not debug:
+        start_background_tasks()
+    # Ontwikkelserver: ALLEEN voor lokaal gebruik. In productie draaien we
+    # gunicorn (zie Dockerfile); de Werkzeug dev server is daarvoor niet geschikt.
+    app.run(
+        host=os.environ.get('HOST', '0.0.0.0'),
+        port=int(os.environ.get('PORT', '8000')),
+        debug=debug,
+    )
+else:
+    # Draaien we onder een WSGI-server (gunicorn)? Start dan de opruimtaak per worker.
+    start_background_tasks()
